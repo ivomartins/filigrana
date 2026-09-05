@@ -27,6 +27,77 @@ free, fully client-side, nothing is uploaded. The UI is bilingual (PT/EN).*
 - **PDFs são rasterizados.** Cada página sai como imagem com a marca "cozida" nos píxeis — não é
   uma camada de texto que se apaga num editor. (Contrapartida: o texto deixa de ser seleccionável.)
 
+## Como verificar que nada sai do seu dispositivo
+
+A promessa "nada é enviado" não pede confiança: verifica-se em minutos com as ferramentas de
+programador de qualquer navegador. Os passos estão escritos para Chrome/Edge (os nomes dos
+separadores aparecem em inglês); no Firefox são equivalentes. *(English speakers: the same four
+checks apply — the DevTools labels below are already in English.)*
+
+### 1. Tráfego de rede — a prova principal
+
+1. Abra `https://filigrana.ao`, prima **F12** e escolha o separador **Network**. Marque
+   **Preserve log** e **Disable cache**.
+2. Carregue um documento (imagem ou PDF), escreva o texto da marca, mexa nos ajustes e transfira
+   o resultado.
+3. Leia a lista de pedidos. Deve ver apenas:
+   - pedidos **GET** ao próprio domínio (`filigrana.ao`) dos ficheiros estáticos do site —
+     `index.html`, `style.css`, `app.js`, as fontes `.woff2`, os `.svg`, `pdf.min.js` e, ao
+     abrir o primeiro PDF, `pdf.worker.min.js`;
+   - entradas `blob:` — ficheiros em memória do navegador; não são pedidos de rede.
+4. Confirme a ausência: escreva `method:POST` na caixa de filtro → lista vazia. Active a coluna
+   **Domain** (clique direito no cabeçalho) → só aparece `filigrana.ao`. Depois de carregar o
+   documento não é feito nenhum pedido novo, à excepção do worker do PDF — um ficheiro do próprio
+   site.
+
+### 2. A política que o navegador impõe — CSP
+
+1. Em **Network**, clique no primeiro pedido (`filigrana.ao`) → **Headers** → **Response
+   Headers** → `content-security-policy`.
+2. Confirme `default-src 'none'`, `connect-src 'none'` e `form-action 'none'`. Significado: o
+   navegador **recusa** qualquer `fetch`, XHR, WebSocket ou beacon (`connect-src 'none'`),
+   qualquer envio de formulário (`form-action 'none'`) e qualquer recurso de terceiros
+   (`default-src 'none'` — scripts, estilos, imagens e fontes só do próprio site). Mesmo que
+   houvesse um erro no código, ou uma alteração maliciosa, o navegador bloqueava o envio.
+3. Prova activa: no separador **Console** escreva `fetch('https://example.com')` e prima Enter.
+   O navegador responde *Refused to connect … violates the Content Security Policy directive
+   "connect-src 'none'"*. O mesmo com `navigator.sendBeacon('https://example.com', 'x')`, que
+   devolve `false`.
+
+A política chega num cabeçalho HTTP (a página não a pode alterar) e está repetida numa `<meta>`.
+Na linha de comandos: `curl -sI https://filigrana.ao | grep -i content-security-policy`.
+
+### 3. O código
+
+- Não há passo de build: o que o servidor entrega é, byte a byte, o que está em `public/` neste
+  repositório. Compare `curl -s https://filigrana.ao/app.js | sha256sum` com
+  `sha256sum public/app.js`.
+- `app.js` é legível (~550 linhas, sem minificação). Procure `fetch(`, `XMLHttpRequest`,
+  `WebSocket`, `sendBeacon`: zero ocorrências. O único `.src` atribuído é um `blob:` local; o PDF
+  é entregue ao pdf.js em memória (`getDocument({ data })`); a exportação é
+  `URL.createObjectURL` mais uma ligação `download`.
+- O pdf.js é a biblioteca da Mozilla, versão 3.11.174, sem alterações. Confirme com o hash dos
+  ficheiros publicados em `cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/`:
+  - `public/vendor/pdf.min.js` — SHA-256 `5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946`
+  - `public/vendor/pdf.worker.min.js` — SHA-256 `feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b`
+
+  A biblioteca contém código de rede para *abrir PDFs a partir de URLs*, que esta ferramenta não
+  usa — e que a CSP bloquearia de qualquer forma.
+
+### 4. Modo avião — a prova mais simples, sem ferramentas
+
+Abra a página e ponha o telemóvel em modo avião (ou, no DevTools, **Network → No throttling →
+Offline**). Imagens, marca e transferência continuam a funcionar. Para PDFs, abra um PDF uma vez
+antes de cortar a rede, para que o navegador guarde o worker. Uma ferramenta que dependesse de um
+servidor pararia aqui.
+
+### O que sai, de facto
+
+Só os pedidos dos ficheiros estáticos do próprio site. Como em qualquer site, o alojamento
+(Cloudflare) vê o endereço IP, o navegador e a hora do pedido — nunca o conteúdo de um documento,
+o texto da marca ou os ajustes. Não há cookies nem analítica; as preferências ficam no
+`localStorage` do navegador; o texto da marca nunca é guardado.
+
 ## Estrutura
 
 ```
