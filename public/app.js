@@ -1,4 +1,4 @@
-// Marca d'Água — Aurora Borealis · app.js
+// Filigrana · app.js — um projecto open-source da Aurora Borealis
 // Processamento 100% local: nenhum byte do documento sai do navegador.
 (() => {
   'use strict';
@@ -6,17 +6,17 @@
   const show = (el, on) => { el.hidden = !on; };
   const MAX_SIDE = 4000;   // limite seguro p/ canvas em browsers móveis
   const MAX_PAGES = 30;    // limite de páginas PDF
-  const PREFS_KEY = 'marca-dagua-prefs';
-  const SITE = 'https://auroraborealis-ao.com';
+  const PREFS_KEY = 'filigrana-prefs';
 
   // ---------- i18n ----------
   const T = {
     pt: {
-      docTitle: "Marca d'Água — Aurora Borealis",
-      eyebrow: 'Ferramenta gratuita',
-      tagline: 'Marque as cópias dos seus documentos com o destinatário e a data antes de as partilhar com terceiros.',
+      docTitle: 'Filigrana — marca de água para cópias de documentos',
+      eyebrow: 'Gratuito · open-source',
+      h1a: 'Marque a cópia. Partilhe com', h1b: 'confiança', h1c: '.',
+      tagline: 'Filigrana escreve o destinatário e a data por cima das cópias do seu BI, passaporte ou PDF — no seu navegador, sem enviar nada para lado nenhum.',
       badge: '100% no navegador — nada é enviado · funciona offline',
-      panelTitle: "Marca d'água",
+      panelTitle: 'Marca de água',
       textLabel: 'Texto',
       textPh: 'Ex.: Cópia exclusiva para Banco X — abertura de conta',
       btnDate: '+ data de hoje',
@@ -31,7 +31,7 @@
       dzTitle: 'Arraste uma imagem ou PDF para aqui',
       dzSub: 'ou clique para escolher · também pode colar (Ctrl+V)',
       dzSmall: 'JPG · PNG · WebP · PDF — o ficheiro nunca sai do seu dispositivo',
-      hint: "⬆ Escreva o texto da marca d'água para o ver aplicado.",
+      hint: '⬆ Escreva o texto da marca de água para o ver aplicado.',
       holdCompare: '👁 manter premido: ver original',
       exportsAs: 'exporta como {fmt}',
       exif: 'EXIF removido na exportação',
@@ -42,29 +42,30 @@
       loadingPdf: 'A ler o PDF…',
       procPage: 'A preparar página {i}/{n}…',
       exportPage: 'A marcar página {i}/{n}…',
-      whyTitle: 'Porquê esta ferramenta',
-      whyBody: 'Todos os dias enviamos cópias do BI, do passaporte ou de comprovativos a bancos, operadoras, senhorios e empregadores — e depois perdemos-lhes o rasto. Uma cópia com o destinatário e a data escritos por cima deixa de servir para outra coisa: quem tentar reutilizá-la denuncia-se a si próprio. A Aurora Borealis trabalha com instituições financeiras em Angola e vê de perto o custo do roubo de identidade. Esta ferramenta é a nossa contribuição gratuita para reduzir esse risco — sem nunca ver os seus documentos.',
-      footBy: 'Uma ferramenta gratuita da',
-      linkPrivacy: 'Privacidade',
+      whyTitle: 'Porquê Filigrana',
+      whyLede: 'Filigrana é a marca de água que protege as notas contra a falsificação. Aqui, protege as cópias dos seus documentos.',
+      whyBody: 'Todos os dias enviamos cópias do BI, do passaporte ou de comprovativos a bancos, operadoras, senhorios e empregadores — e depois perdemos-lhes o rasto. Uma cópia com o destinatário e a data escritos por cima deixa de servir para outra coisa: quem tentar reutilizá-la denuncia-se a si próprio. O projecto nasceu na Aurora Borealis, uma consultora de cibersegurança que trabalha com instituições financeiras em Angola e vê de perto o custo do roubo de identidade. É gratuito e de código aberto, para que qualquer pessoa o possa usar, verificar e melhorar.',
+      footBy: 'Um projecto open-source da',
       linkSource: 'Código-fonte',
+      linkIssues: 'Sugestões e problemas',
       privacyTitle: 'Privacidade:',
       privacyBody: 'todo o processamento acontece localmente no seu navegador; nenhum ficheiro é enviado para servidor algum. Sem cookies, sem analítica, sem contas. Os metadados da imagem (EXIF, localização, dispositivo) são removidos automaticamente ao exportar. As suas preferências (idioma, ajustes) ficam só neste dispositivo — o texto da marca nunca é guardado.',
       honestTitle: 'Nota honesta:',
-      honestBody: "a marca d'água dificulta muito a reutilização indevida e torna fugas rastreáveis — não torna o abuso impossível. Cubra sempre o documento inteiro, incluindo a fotografia.",
+      honestBody: 'a marca de água dificulta muito a reutilização indevida e torna fugas rastreáveis — não torna o abuso impossível. Cubra sempre o documento inteiro, incluindo a fotografia.',
       errNotImage: 'Formato não suportado. Use JPG, PNG, WebP ou PDF.',
       errDecode: 'Não foi possível ler esta imagem. HEIC (iPhone) ainda não é suportado fora do Safari — no iPhone partilhe como JPG (Definições › Câmara › Mais Compatível) ou use uma captura de ecrã.',
       errExport: 'Falha ao gerar o ficheiro.',
       errPdfRead: 'Não foi possível ler este PDF.',
       errPdfPassword: 'Este PDF está protegido por palavra-passe — remova a protecção primeiro.',
-      errTooMany: 'Esta ferramenta suporta PDFs até 30 páginas.',
-      suffix: 'marca-dagua',
+      errTooMany: 'Filigrana suporta PDFs até 30 páginas.',
+      suffix: 'marca-de-agua',
       dateLocale: 'pt-PT',
-      privacyPath: '/privacidade/',
     },
     en: {
-      docTitle: "Marca d'Água — Aurora Borealis",
-      eyebrow: 'Free tool',
-      tagline: 'Stamp copies of your documents with the recipient and date before sharing them with third parties.',
+      docTitle: 'Filigrana — watermark your document copies',
+      eyebrow: 'Free · open-source',
+      h1a: 'Stamp the copy. Share with', h1b: 'confidence', h1c: '.',
+      tagline: 'Filigrana writes the recipient and date across copies of your ID, passport or PDF — in your browser, without sending anything anywhere.',
       badge: '100% in your browser — nothing is uploaded · works offline',
       panelTitle: 'Watermark',
       textLabel: 'Text',
@@ -92,11 +93,12 @@
       loadingPdf: 'Reading the PDF…',
       procPage: 'Preparing page {i}/{n}…',
       exportPage: 'Marking page {i}/{n}…',
-      whyTitle: 'Why this tool',
-      whyBody: 'Every day we send copies of our ID, passport or proof documents to banks, telcos, landlords and employers — and then lose track of them. A copy with the recipient and date written across it is useless for anything else: whoever tries to reuse it exposes themselves. Aurora Borealis works with financial institutions in Angola and sees the cost of identity theft up close. This tool is our free contribution to reducing that risk — without ever seeing your documents.',
-      footBy: 'A free tool by',
-      linkPrivacy: 'Privacy',
+      whyTitle: 'Why Filigrana',
+      whyLede: 'Filigrana is the watermark that protects banknotes against counterfeiting. Here, it protects the copies of your documents.',
+      whyBody: 'Every day we send copies of our ID, passport or proof documents to banks, telcos, landlords and employers — and then lose track of them. A copy with the recipient and date written across it is useless for anything else: whoever tries to reuse it exposes themselves. The project was born at Aurora Borealis, a cybersecurity consultancy that works with financial institutions in Angola and sees the cost of identity theft up close. It is free and open-source, so anyone can use it, verify it and improve it.',
+      footBy: 'An open-source project by',
       linkSource: 'Source code',
+      linkIssues: 'Feedback & issues',
       privacyTitle: 'Privacy:',
       privacyBody: 'all processing happens locally in your browser; no file is ever sent to any server. No cookies, no analytics, no accounts. Image metadata (EXIF, location, device) is removed automatically on export. Your preferences (language, settings) stay on this device only — the watermark text is never stored.',
       honestTitle: 'Honest note:',
@@ -106,10 +108,9 @@
       errExport: 'Failed to generate the file.',
       errPdfRead: "Couldn't read this PDF.",
       errPdfPassword: 'This PDF is password-protected — remove the protection first.',
-      errTooMany: 'This tool supports PDFs up to 30 pages.',
+      errTooMany: 'Filigrana supports PDFs up to 30 pages.',
       suffix: 'watermarked',
       dateLocale: 'en-GB',
-      privacyPath: '/privacy/',
     },
   };
 
@@ -166,7 +167,6 @@
       sw.title = t(sw.dataset.name);
       sw.setAttribute('aria-label', t(sw.dataset.name));
     });
-    $('linkPrivacy').href = SITE + t('privacyPath');
     $('langPt').setAttribute('aria-pressed', state.lang === 'pt');
     $('langEn').setAttribute('aria-pressed', state.lang === 'en');
     if (state.pages.length){ updateMeta(); updatePager(); }

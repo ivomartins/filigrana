@@ -1,7 +1,7 @@
 {
-  "name": "Marca d'Água — Aurora Borealis",
-  "short_name": "Marca d'Água",
-  "description": "Marque as cópias dos seus documentos com o destinatário e a data antes de as partilhar. 100% no navegador — nada é enviado.",
+  "name": "Filigrana — marca de água para cópias de documentos",
+  "short_name": "Filigrana",
+  "description": "Escreva o destinatário e a data por cima das cópias dos seus documentos antes de as partilhar. 100% no navegador — nada é enviado.",
   "lang": "pt",
   "start_url": "./",
   "scope": "./",

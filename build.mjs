@@ -1,4 +1,4 @@
-// Gera dist/marca-dagua.html — o ficheiro único portátil (offline, sem rede).
+// Gera dist/filigrana.html — o ficheiro único portátil (offline, sem rede).
 // Embute: style.css (+ fontes e imagens como data: URIs), pdf.js, o worker (não
 // executado, lançado via Blob URL pelo app.js) e o próprio app.js. A CSP <meta> é
 // reescrita com hashes SHA-256 dos blocos inline, para continuar estrita.
@@ -57,5 +57,5 @@ const leftover = html.match(/(src|href)="(vendor|fonts|assets|style\.css|app\.js
 if (leftover) throw new Error(`sobrou uma referência por embutir: ${leftover[0]}`);
 
 mkdirSync('dist', { recursive: true });
-writeFileSync('dist/marca-dagua.html', html);
-console.log(`dist/marca-dagua.html: ${(html.length / 1024 / 1024).toFixed(2)} MB · ${inlineScripts.length} scripts inline`);
+writeFileSync('dist/filigrana.html', html);
+console.log(`dist/filigrana.html: ${(html.length / 1024 / 1024).toFixed(2)} MB · ${inlineScripts.length} scripts inline`);
