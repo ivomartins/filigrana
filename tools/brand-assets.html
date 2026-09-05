@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<title>Marca d'Água — gerador de assets (OG + ícones)</title>
+<style>
+  @font-face{font-family:'Sora';font-weight:100 800;src:url(../public/fonts/sora.woff2) format('woff2')}
+  @font-face{font-family:'JetBrains Mono';font-weight:100 800;src:url(../public/fonts/jetbrains-mono.woff2) format('woff2')}
+  body{background:#0a0f27;color:#c8cfe0;font:14px system-ui;padding:20px}
+  canvas{display:block;max-width:100%;margin:10px 0;border:1px solid #333}
+  a{color:#00fa96}
+  #log{white-space:pre-wrap;font:12px monospace;color:#9aa3bc}
+</style>
+</head>
+<body>
+<h1>Gerador de assets — Marca d'Água</h1>
+<p>Desenha o cartão OG (1200×630) e os ícones PWA a partir das fontes e do logótipo reais.
+   Abre com <code>?post=1</code> para enviar para um receptor local em <code>127.0.0.1:8769</code>; caso contrário usa os links para transferir.</p>
+<div id="out"></div>
+<div id="log"></div>
+<script>
+(async () => {
+  const log = m => { document.getElementById('log').textContent += m + '\n'; };
+  const out = document.getElementById('out');
+  const post = new URLSearchParams(location.search).has('post');
+
+  // SVGs sem width/height não desenham em canvas: injectamos dimensões e carregamos via Blob URL
+  async function loadSvg(path, w, h){
+    const txt = await (await fetch(path)).text();
+    const fixed = txt.replace('<svg ', `<svg width="${w}" height="${h}" `);
+    const url = URL.createObjectURL(new Blob([fixed], { type: 'image/svg+xml' }));
+    const img = new Image(); img.src = url; await img.decode();
+    return img;
+  }
+  await document.fonts.load('300 96px Sora'); await document.fonts.load('600 96px Sora');
+  await document.fonts.load('400 32px Sora'); await document.fonts.load('500 22px "JetBrains Mono"');
+  const logo = await loadSvg('../public/assets/aurora-logo.svg', 441.8 * 0.36, 192.68 * 0.36);
+  const mark512 = await loadSvg('../public/assets/mark.svg', 175 * 1.76, 192.68 * 1.76);
+
+  const aurora = (g, x0, y0, x1, y1) => {
+    const gr = g.createLinearGradient(x0, y0, x1, y1);
+    [[0,'#845cf9'],[.06,'#7b5cf2'],[.15,'#615edf'],[.22,'#4a5fce'],[.44,'#4f5ed3'],[.76,'#00fa96'],[.9,'#55ffb6'],[.99,'#83ffca']]
+      .forEach(([o, c]) => gr.addColorStop(o, c));
+    return gr;
+  };
+  const rrect = (g, x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); };
+
+  // ---------- OG 1200×630 ----------
+  function drawOg(){
+    const c = document.createElement('canvas'); c.width = 1200; c.height = 630;
+    const g = c.getContext('2d');
+    g.fillStyle = '#050819'; g.fillRect(0, 0, 1200, 630);
+    let rg = g.createRadialGradient(240, -60, 0, 240, -60, 700);
+    rg.addColorStop(0, 'rgba(132,92,249,.34)'); rg.addColorStop(.5, 'rgba(74,95,206,.10)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rg; g.fillRect(0, 0, 1200, 630);
+    rg = g.createRadialGradient(1020, 640, 0, 1020, 640, 640);
+    rg.addColorStop(0, 'rgba(0,250,150,.22)'); rg.addColorStop(.5, 'rgba(131,255,202,.05)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rg; g.fillRect(0, 0, 1200, 630);
+
+    g.drawImage(logo, 72, 56);
+
+    g.textBaseline = 'alphabetic';
+    g.fillStyle = '#f5f7fb'; g.font = '300 108px Sora';
+    const t1 = "Marca d'"; g.fillText(t1, 72, 300);
+    const w1 = g.measureText(t1).width;
+    g.font = '600 108px Sora';
+    g.fillStyle = aurora(g, 72 + w1, 0, 72 + w1 + 300, 0);
+    g.fillText('Água', 72 + w1, 300);
+
+    g.fillStyle = '#c8cfe0'; g.font = '400 30px Sora';
+    g.fillText('Marque as cópias dos seus documentos com o', 72, 366);
+    g.fillText('destinatário e a data antes de as partilhar.', 72, 408);
+
+    // pill
+    g.font = '500 20px "JetBrains Mono"';
+    const pill = '🔒  100% no navegador · nada é enviado';
+    const pw = g.measureText(pill).width + 44;
+    rrect(g, 72, 452, pw, 50, 25);
+    g.fillStyle = 'rgba(0,250,150,.10)'; g.fill();
+    g.strokeStyle = 'rgba(0,250,150,.45)'; g.lineWidth = 1.5; g.stroke();
+    g.fillStyle = '#00fa96'; g.textBaseline = 'middle'; g.fillText(pill, 94, 478);
+    g.textBaseline = 'alphabetic';
+
+    // mini documento marcado (à direita)
+    g.save();
+    g.translate(790, 150); g.rotate(-6 * Math.PI / 180);
+    g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 40; g.shadowOffsetY = 18;
+    rrect(g, 0, 0, 360, 240, 16); g.fillStyle = '#dfe7ee'; g.fill();
+    g.shadowColor = 'transparent';
+    rrect(g, 0, 0, 360, 44, [16, 16, 0, 0]); g.fillStyle = '#b7c6d4'; g.fill();
+    g.fillStyle = '#4a6076'; rrect(g, 22, 66, 92, 118, 6); g.fill();
+    g.fillStyle = '#9fb2c1';
+    [[130, 78, 190], [130, 104, 150], [130, 130, 170], [130, 156, 120]].forEach(([x, y, w]) => { rrect(g, x, y, w, 12, 4); g.fill(); });
+    g.fillStyle = '#123a5e'; g.font = '700 13px "JetBrains Mono"'; g.fillText('IDAGO004867231<<<<<<<<', 22, 216);
+    // marca d'água
+    g.save();
+    rrect(g, 0, 0, 360, 240, 16); g.clip();
+    g.translate(180, 120); g.rotate(-30 * Math.PI / 180);
+    g.fillStyle = 'rgba(27,27,27,.38)'; g.font = '700 20px Sora'; g.textBaseline = 'middle';
+    const wm = 'Cópia exclusiva para Banco X — 05/09/2026';
+    const tw = g.measureText(wm).width;
+    for (let row = -4; row <= 4; row++){
+      const st = (row % 2) * (tw + 40) / 2;
+      for (let x = -520 - st; x < 520; x += tw + 40) g.fillText(wm, x, row * 46);
+    }
+    g.restore();
+    g.restore();
+
+    // rodapé
+    g.fillStyle = '#6c7793'; g.font = '500 16px "JetBrains Mono"';
+    g.fillText('marcadagua.auroraborealis-ao.com', 72, 574);
+    g.textAlign = 'right'; g.fillStyle = '#00fa96';
+    g.fillText('FERRAMENTA GRATUITA · SECURITY BY DESIGN', 1128, 574);
+    g.textAlign = 'left';
+    return c;
+  }
+
+  // ---------- ícones ----------
+  function drawIcon(size, pad){
+    const c = document.createElement('canvas'); c.width = c.height = size;
+    const g = c.getContext('2d');
+    g.fillStyle = '#050819'; g.fillRect(0, 0, size, size); // fundo liso: PNG pequeno, maskable limpo
+    const mh = size * (1 - pad * 2), mw = mh * (175 / 192.68);
+    g.drawImage(mark512, (size - mw) / 2, (size - mh) / 2, mw, mh);
+    return c;
+  }
+
+  const assets = [
+    ['og.jpg', drawOg(), 'image/jpeg', 0.88],   // JPEG: cartão social leve (~100 KB)
+    ['icon-192.png', drawIcon(192, .17)],
+    ['icon-512.png', drawIcon(512, .17)],
+    ['icon-512-maskable.png', drawIcon(512, .24)],
+    ['icon-180.png', drawIcon(180, .17)],
+  ];
+  for (const [name, c, type = 'image/png', q] of assets){
+    out.appendChild(c);
+    const blob = await new Promise(r => c.toBlob(r, type, q));
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.textContent = `⬇ ${name} (${(blob.size / 1024).toFixed(0)} KB)`;
+    out.appendChild(a); out.appendChild(document.createElement('br'));
+    if (post){
+      const r = await fetch('http://127.0.0.1:8769/' + name, { method: 'POST', body: blob });
+      log(`${name}: ${r.status} ${await r.text()} (${blob.size} bytes)`);
+    }
+  }
+  log('done');
+})();
+</script>
+</body>
+</html>

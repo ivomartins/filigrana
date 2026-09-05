@@ -1,0 +1,12 @@
+# Cloudflare Pages response headers.
+# The CSP is the same policy as the <meta> tag in index.html, plus frame-ancestors
+# (which only works as a header). connect-src 'none' means the page is technically
+# unable to send anything anywhere — that is the tool's whole promise.
+/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; font-src 'self'; worker-src 'self' blob:; manifest-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin

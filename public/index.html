@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; font-src 'self'; worker-src 'self' blob:; manifest-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#050819">
+<meta name="color-scheme" content="dark">
+<title>Marca d'Água — Aurora Borealis</title>
+<meta name="description" content="Marque as cópias do seu BI, passaporte ou documentos com o destinatário e a data antes de as partilhar. 100% no navegador — nada é enviado. Ferramenta gratuita da Aurora Borealis.">
+<link rel="canonical" href="https://marcadagua.auroraborealis-ao.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Aurora Borealis">
+<meta property="og:title" content="Marca d'Água — proteja as cópias dos seus documentos">
+<meta property="og:description" content="Marque cópias do BI, passaporte ou PDFs com o destinatário e a data antes de as partilhar. 100% no navegador — nada é enviado.">
+<meta property="og:url" content="https://marcadagua.auroraborealis-ao.com/">
+<meta property="og:image" content="https://marcadagua.auroraborealis-ao.com/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:locale:alternate" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="assets/mark.svg">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="ambient" aria-hidden="true"></div>
+<div class="wrap">
+
+  <header class="top">
+    <a class="brand" href="https://auroraborealis-ao.com/" target="_blank" rel="noopener" title="Aurora Borealis — Security by Design">
+      <img src="assets/aurora-logo.svg" alt="Aurora Borealis" width="128" height="56">
+    </a>
+    <div class="top-right">
+      <span class="eyebrow" data-i18n="eyebrow"></span>
+      <div id="langSwitch" role="group" aria-label="Idioma / Language">
+        <button id="langPt" aria-pressed="true" type="button">PT</button>
+        <button id="langEn" aria-pressed="false" type="button">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1 class="title">Marca d'<span class="gradient-text">Água</span></h1>
+    <p class="lead" data-i18n="tagline"></p>
+    <div class="badge">🔒 <span data-i18n="badge"></span></div>
+  </section>
+
+  <main>
+    <section class="card" id="controls">
+      <h2 class="eyebrow" data-i18n="panelTitle"></h2>
+
+      <label for="wmText" data-i18n="textLabel"></label>
+      <input type="text" id="wmText" data-i18n-ph="textPh" autocomplete="off">
+      <div class="rowbtns">
+        <button class="chipbtn" id="btnDate" type="button" data-i18n="btnDate"></button>
+        <button class="chipbtn" id="btnPreset" type="button" data-i18n="btnPreset"></button>
+      </div>
+
+      <label for="size"><span data-i18n="size"></span> <output id="sizeOut"></output></label>
+      <input type="range" id="size" min="2" max="12" step="0.5" value="4">
+
+      <label for="opacity"><span data-i18n="opacity"></span> <output id="opacityOut"></output></label>
+      <input type="range" id="opacity" min="10" max="90" step="5" value="35">
+
+      <label for="rotation"><span data-i18n="rotation"></span> <output id="rotationOut"></output></label>
+      <input type="range" id="rotation" min="-90" max="90" step="5" value="-30">
+
+      <label for="density" data-i18n="density"></label>
+      <input type="range" id="density" min="1" max="10" step="1" value="5">
+      <div class="hintrow"><span data-i18n="sparse"></span><span data-i18n="dense"></span></div>
+
+      <label data-i18n="color"></label>
+      <div class="swatches" id="swatches">
+        <div class="swatch sw-dark sel" role="button" tabindex="0" data-color="#1b1b1b" data-name="colorDark"></div>
+        <div class="swatch sw-light" role="button" tabindex="0" data-color="#ffffff" data-name="colorLight"></div>
+        <div class="swatch sw-red" role="button" tabindex="0" data-color="#c62828" data-name="colorRed"></div>
+      </div>
+
+      <button id="btnDownload" disabled data-i18n="download"></button>
+      <button id="btnReset" type="button" data-i18n="reset"></button>
+    </section>
+
+    <section id="stage">
+      <div id="dropzone">
+        <div class="big">🪪</div>
+        <strong data-i18n="dzTitle"></strong>
+        <span data-i18n="dzSub"></span>
+        <small data-i18n="dzSmall"></small>
+      </div>
+      <div id="canvasBox" hidden><canvas id="preview"></canvas></div>
+      <div id="pager" hidden>
+        <button class="chipbtn" id="btnPrev" type="button" aria-label="‹">‹</button>
+        <span id="pageLabel"></span>
+        <button class="chipbtn" id="btnNext" type="button" aria-label="›">›</button>
+      </div>
+      <div id="busy" role="status" hidden></div>
+      <div id="hintText" data-i18n="hint" hidden></div>
+      <div id="meta" hidden>
+        <span id="metaDims"></span>
+        <span id="metaPages" hidden></span>
+        <span id="metaFmt"></span>
+        <span data-i18n="exif"></span>
+        <span id="metaRaster" data-i18n="rasterChip" hidden></span>
+        <span id="metaResized" data-i18n="resized" hidden></span>
+        <button class="chipbtn" id="btnCompare" type="button" data-i18n="holdCompare"></button>
+      </div>
+    </section>
+  </main>
+
+  <section class="why">
+    <h2 class="eyebrow" data-i18n="whyTitle"></h2>
+    <p data-i18n="whyBody"></p>
+  </section>
+
+  <footer class="foot">
+    <div class="foot-brand">
+      <img src="assets/mark.svg" alt="" width="28" height="31">
+      <div>
+        <div class="foot-by"><span data-i18n="footBy"></span> <a href="https://auroraborealis-ao.com/" target="_blank" rel="noopener">Aurora Borealis</a></div>
+        <div class="foot-tag">Security by Design</div>
+      </div>
+    </div>
+    <p class="foot-note"><b data-i18n="privacyTitle"></b> <span data-i18n="privacyBody"></span></p>
+    <p class="foot-note"><b data-i18n="honestTitle"></b> <span data-i18n="honestBody"></span></p>
+    <nav class="foot-links">
+      <a href="https://auroraborealis-ao.com/" target="_blank" rel="noopener">auroraborealis-ao.com</a>
+      <a id="linkPrivacy" href="https://auroraborealis-ao.com/privacidade/" target="_blank" rel="noopener" data-i18n="linkPrivacy"></a>
+      <a id="linkSource" href="https://github.com/aurora-borealis-ao/marca-dagua" target="_blank" rel="noopener" data-i18n="linkSource"></a>
+      <span class="ver">v1.0.0</span>
+    </nav>
+  </footer>
+
+</div>
+
+<input type="file" id="fileInput" accept="image/*,application/pdf,.pdf">
+<div id="toast" role="alert" hidden></div>
+
+<!-- pdf.js 3.11.174 (cdnjs), vendored locally. The worker is same-origin JS — no network, stays
+     fully offline. Served build points workerSrc at vendor/pdf.worker.min.js; the single-file
+     dist embeds the worker and app.js spins it from a Blob URL. -->
+<script src="vendor/pdf.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

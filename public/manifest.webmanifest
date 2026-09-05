@@ -1,0 +1,16 @@
+{
+  "name": "Marca d'Água — Aurora Borealis",
+  "short_name": "Marca d'Água",
+  "description": "Marque as cópias dos seus documentos com o destinatário e a data antes de as partilhar. 100% no navegador — nada é enviado.",
+  "lang": "pt",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#050819",
+  "theme_color": "#050819",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
