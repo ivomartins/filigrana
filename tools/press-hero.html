@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<title>Filigrana — press kit (hero + formatos sociais)</title>
+<style>
+  @font-face{font-family:'Sora';font-weight:100 800;src:url(../public/fonts/sora.woff2) format('woff2')}
+  @font-face{font-family:'JetBrains Mono';font-weight:100 800;src:url(../public/fonts/jetbrains-mono.woff2) format('woff2')}
+  body{background:#0a0f27;color:#c8cfe0;font:14px system-ui;padding:20px}
+  canvas{display:block;max-width:100%;margin:10px 0;border:1px solid #333}
+  a{color:#00fa96}
+  #log{white-space:pre-wrap;font:12px monospace;color:#9aa3bc}
+</style>
+</head>
+<body>
+<h1>Press kit — hero e formatos sociais</h1>
+<p>Compõe a ilustração <code>press/hero-illustration.png</code> com a marca, o título e o endereço, em 16:9 (PT/EN),
+   OG 1200×630, Story 9:16 e feed 4:5. Abre com <code>?post=1</code> para enviar para <code>127.0.0.1:8769</code>.</p>
+<div id="out"></div>
+<div id="log"></div>
+<script>
+(async () => {
+  const log = m => { document.getElementById('log').textContent += m + '\n'; };
+  const out = document.getElementById('out');
+  const post = new URLSearchParams(location.search).has('post');
+  for (const f of ['300 80px Sora', '400 30px Sora', '700 44px Sora', '600 80px Sora', '500 28px "JetBrains Mono"']) await document.fonts.load(f);
+
+  // onload em vez de decode(): decode() fica adiado em separadores em segundo plano
+  const load = (im, src) => new Promise((res, rej) => { im.onload = () => res(im); im.onerror = rej; im.src = src; });
+  const hero = await load(new Image(), '../press/hero-illustration.png');
+  async function loadSvg(path, w, h){
+    const txt = await (await fetch(path)).text();
+    const url = URL.createObjectURL(new Blob([txt.replace('<svg ', `<svg width="${w}" height="${h}" `)], { type: 'image/svg+xml' }));
+    return load(new Image(), url);
+  }
+  const mark = await loadSvg('../public/assets/filigrana-mark.svg', 256, 256);
+
+  const BG = '#050819';
+  const aurora = (g, x0, x1, y) => {
+    const gr = g.createLinearGradient(x0, y, x1, y);
+    [[0,'#845cf9'],[.22,'#4a5fce'],[.76,'#00fa96'],[.99,'#83ffca']].forEach(([o, c]) => gr.addColorStop(o, c));
+    return gr;
+  };
+  // desenha a imagem a preencher (cover) uma caixa, recorte centrado
+  function cover(g, im, x, y, w, h){
+    const s = Math.max(w / im.naturalWidth, h / im.naturalHeight);
+    const dw = im.naturalWidth * s, dh = im.naturalHeight * s;
+    g.drawImage(im, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  }
+  function wordmark(g, x, y, size, align = 'left'){
+    g.font = `700 ${size}px Sora`; g.textBaseline = 'middle';
+    const tw = g.measureText('Filigrana').width, gap = size * .3, ms = size * 1.05;
+    const total = ms + gap + tw;
+    const x0 = align === 'center' ? x - total / 2 : align === 'right' ? x - total : x;
+    g.drawImage(mark, x0, y - ms / 2, ms, ms);
+    g.fillStyle = '#f5f7fb'; g.textAlign = 'left'; g.fillText('Filigrana', x0 + ms + gap, y);
+    g.textBaseline = 'alphabetic';
+  }
+  const COPY = {
+    pt: { l1: 'Marque a cópia.', l2: 'Partilhe com', l3: 'confiança.', sub: 'Gratuito · nada sai do telemóvel · imagens e PDF' },
+    en: { l1: 'Stamp the copy.', l2: 'Share with', l3: 'confidence.', sub: 'Free · nothing leaves your phone · images and PDF' },
+  };
+
+  // ---------- 16:9 hero: texto no terço direito ----------
+  function drawHero(lang){
+    const W = 1920, H = 1080, c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d'); const t = COPY[lang];
+    cover(g, hero, 0, 0, W, H);
+    // escurece ligeiramente o terço direito para legibilidade
+    const sh = g.createLinearGradient(1000, 0, 1400, 0); sh.addColorStop(0, 'rgba(5,8,25,0)'); sh.addColorStop(1, 'rgba(5,8,25,.55)');
+    g.fillStyle = sh; g.fillRect(1000, 0, 920, H);
+    const x = 1180;
+    wordmark(g, x, 96, 40);
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+    g.fillStyle = '#f5f7fb'; g.font = '300 76px Sora';
+    g.fillText(t.l1, x, 470); g.fillText(t.l2, x, 566);
+    g.font = '600 76px Sora'; g.fillStyle = aurora(g, x, x + 560, 0); g.fillText(t.l3, x, 662);
+    g.fillStyle = '#c8cfe0'; g.font = '400 28px Sora'; g.fillText(t.sub, x, 740);
+    g.fillStyle = '#00fa96'; g.font = '500 30px "JetBrains Mono"'; g.fillText('filigrana.ao', x, 810);
+    return c;
+  }
+
+  // ---------- OG 1200×630: recorte (cover) do hero composto ----------
+  function drawOg(src){
+    const c = document.createElement('canvas'); c.width = 1200; c.height = 630;
+    cover(c.getContext('2d'), Object.assign(src, { naturalWidth: src.width, naturalHeight: src.height }), 0, 0, 1200, 630);
+    return c;
+  }
+
+  // ---------- formatos verticais: imagem inteira, texto em cima e em baixo ----------
+  function drawVertical(W, H, lang, layout){
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d'); const t = COPY[lang];
+    g.fillStyle = BG; g.fillRect(0, 0, W, H);
+    let rg = g.createRadialGradient(W * .15, 0, 0, W * .15, 0, W); rg.addColorStop(0, 'rgba(132,92,249,.30)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H);
+    rg = g.createRadialGradient(W * .9, H, 0, W * .9, H, W); rg.addColorStop(0, 'rgba(0,250,150,.18)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H);
+    // imagem a toda a largura, com desvanecimento nas bordas superior/inferior
+    const ih = Math.round(W * hero.naturalHeight / hero.naturalWidth), iy = layout.imgY;
+    g.drawImage(hero, 0, iy, W, ih);
+    const fade = 90;
+    let f = g.createLinearGradient(0, iy, 0, iy + fade); f.addColorStop(0, BG); f.addColorStop(1, 'rgba(5,8,25,0)'); g.fillStyle = f; g.fillRect(0, iy, W, fade);
+    f = g.createLinearGradient(0, iy + ih - fade, 0, iy + ih); f.addColorStop(0, 'rgba(5,8,25,0)'); f.addColorStop(1, BG); g.fillStyle = f; g.fillRect(0, iy + ih - fade, W, fade);
+    // texto
+    g.textAlign = 'center';
+    wordmark(g, W / 2, layout.markY, layout.markSize, 'center');
+    g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    g.fillStyle = '#f5f7fb'; g.font = `300 ${layout.h}px Sora`;
+    g.fillText(t.l1, W / 2, layout.h1Y); g.fillText(t.l2, W / 2, layout.h1Y + layout.h * 1.18);
+    g.font = `600 ${layout.h}px Sora`; const l3w = g.measureText(t.l3).width;
+    g.fillStyle = aurora(g, W / 2 - l3w / 2, W / 2 + l3w / 2, 0); g.fillText(t.l3, W / 2, layout.h1Y + layout.h * 2.36);
+    g.fillStyle = '#c8cfe0'; g.font = `400 ${layout.sub}px Sora`; g.fillText(t.sub, W / 2, layout.subY);
+    // pastilha com o endereço
+    g.font = `500 ${layout.url}px "JetBrains Mono"`; const uw = g.measureText('filigrana.ao').width + layout.url * 2;
+    g.beginPath(); g.roundRect(W / 2 - uw / 2, layout.urlY - layout.url * 1.1, uw, layout.url * 2.2, layout.url * 1.1);
+    g.fillStyle = 'rgba(0,250,150,.10)'; g.fill(); g.strokeStyle = 'rgba(0,250,150,.45)'; g.lineWidth = 2; g.stroke();
+    g.fillStyle = '#00fa96'; g.textBaseline = 'middle'; g.fillText('filigrana.ao', W / 2, layout.urlY); g.textBaseline = 'alphabetic';
+    g.textAlign = 'left';
+    return c;
+  }
+
+  const heroPt = drawHero('pt'), heroEn = drawHero('en');
+  const assets = [
+    ['hero-16x9-pt.png', heroPt],
+    ['hero-16x9-en.png', heroEn],
+    ['og-illustration.jpg', drawOg(heroPt), 'image/jpeg', 0.9],
+    ['story-9x16-pt.png', drawVertical(1080, 1920, 'pt', { imgY: 640, markY: 300, markSize: 48, h: 68, h1Y: 420, sub: 30, subY: 1350, url: 30, urlY: 1450 })],
+    ['feed-4x5-pt.png',   drawVertical(1080, 1350, 'pt', { imgY: 470, markY: 130, markSize: 44, h: 60, h1Y: 236, sub: 28, subY: 1120, url: 28, urlY: 1210 })],
+  ];
+  for (const [name, c, type = 'image/png', q] of assets){
+    out.appendChild(c);
+    const blob = await new Promise(r => c.toBlob(r, type, q));
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.textContent = `⬇ ${name} (${(blob.size / 1024).toFixed(0)} KB)`;
+    out.appendChild(a); out.appendChild(document.createElement('br'));
+    if (post){ const r = await fetch('http://127.0.0.1:8769/' + name, { method: 'POST', body: blob }); log(`${name}: ${r.status} (${blob.size} bytes)`); }
+  }
+  log('done');
+})();
+</script>
+</body>
+</html>
