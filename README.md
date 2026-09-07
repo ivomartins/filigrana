@@ -95,8 +95,10 @@ servidor pararia aqui.
 
 Só os pedidos dos ficheiros estáticos do próprio site. Como em qualquer site, o alojamento
 (Cloudflare) vê o endereço IP, o navegador e a hora do pedido — nunca o conteúdo de um documento,
-o texto da marca ou os ajustes. Não há cookies nem analítica; as preferências ficam no
-`localStorage` do navegador; o texto da marca nunca é guardado.
+o texto da marca ou os ajustes. As estatísticas de visitas que usamos vêm exclusivamente desses
+registos de pedidos, contados na rede da Cloudflare — não há qualquer script de analítica, beacon
+ou cookie na página (a CSP bloqueá-los-ia). As preferências ficam no `localStorage` do navegador;
+o texto da marca nunca é guardado.
 
 ## Estrutura
 
