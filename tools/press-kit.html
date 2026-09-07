@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<title>Filigrana — press kit (espécime antes/depois)</title>
+<style>
+  @font-face{font-family:'Sora';font-weight:100 800;src:url(../public/fonts/sora.woff2) format('woff2')}
+  @font-face{font-family:'JetBrains Mono';font-weight:100 800;src:url(../public/fonts/jetbrains-mono.woff2) format('woff2')}
+  body{background:#0a0f27;color:#c8cfe0;font:14px system-ui;padding:20px}
+  canvas{display:block;max-width:100%;margin:10px 0;border:1px solid #333}
+  a{color:#00fa96}
+  #log{white-space:pre-wrap;font:12px monospace;color:#9aa3bc}
+</style>
+</head>
+<body>
+<h1>Press kit — espécime antes/depois</h1>
+<p>Gera um documento de teste claramente falso (República de Testelândia · ESPÉCIME) sem marca, com marca
+   (mesmo algoritmo e valores por omissão do Filigrana) e uma composição lado a lado.
+   Abre com <code>?post=1</code> para enviar para o receptor local em <code>127.0.0.1:8769</code>.</p>
+<div id="out"></div>
+<div id="log"></div>
+<script>
+(async () => {
+  const log = m => { document.getElementById('log').textContent += m + '\n'; };
+  const out = document.getElementById('out');
+  const post = new URLSearchParams(location.search).has('post');
+  await document.fonts.load('600 60px Sora'); await document.fonts.load('400 40px Sora');
+  await document.fonts.load('500 30px "JetBrains Mono"');
+
+  const W = 1600, H = 1000;
+
+  // ---------- espécime (nenhum dado real; brasão genérico) ----------
+  function drawSpecimen(){
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    g.fillStyle = '#e4ebf1'; g.fillRect(0, 0, W, H);
+    // guilloche suave
+    g.strokeStyle = 'rgba(74,96,118,.10)'; g.lineWidth = 1;
+    for (let y = -H; y < H * 2; y += 22){ g.beginPath(); g.moveTo(0, y); g.bezierCurveTo(W * .3, y + 60, W * .7, y - 60, W, y); g.stroke(); }
+    // cabeçalho
+    g.fillStyle = '#b7c6d4'; g.fillRect(0, 0, W, 150);
+    g.fillStyle = '#123a5e'; g.font = '700 54px Sora'; g.textBaseline = 'alphabetic';
+    g.fillText('REPÚBLICA DE TESTELÂNDIA', 70, 95);
+    g.font = '400 34px Sora'; g.fillText('BILHETE DE IDENTIDADE · ESPÉCIME', 70, 215);
+    // brasão genérico (círculo com estrela) — não é o emblema de nenhum país
+    g.save(); g.translate(1460, 75); g.fillStyle = '#123a5e'; g.beginPath(); g.arc(0, 0, 46, 0, 7); g.fill();
+    g.fillStyle = '#e4ebf1'; g.beginPath(); for (let i = 0; i < 5; i++){ const a = -Math.PI / 2 + i * 4 * Math.PI / 5; g.lineTo(Math.cos(a) * 28, Math.sin(a) * 28); } g.closePath(); g.fill(); g.restore();
+    // fotografia (silhueta)
+    g.fillStyle = '#9fb2c1'; g.fillRect(70, 260, 360, 460);
+    g.fillStyle = '#4a6076'; g.beginPath(); g.arc(250, 400, 85, 0, 7); g.fill();
+    g.beginPath(); g.moveTo(120, 720); g.quadraticCurveTo(250, 470, 380, 720); g.closePath(); g.fill();
+    // campos
+    const field = (label, value, y) => {
+      g.fillStyle = '#6c7793'; g.font = '500 22px "JetBrains Mono"'; g.fillText(label, 500, y);
+      g.fillStyle = '#123a5e'; g.font = '600 38px Sora'; g.fillText(value, 500, y + 46);
+    };
+    field('NOME', 'MARIA EXEMPLO DOS SANTOS', 300);
+    field('N.º', '000000000LA000', 420);
+    field('DATA DE NASCIMENTO', '01-01-1990', 540);
+    field('VALIDADE', '31-12-2030', 660);
+    g.fillStyle = '#6c7793'; g.font = '500 22px "JetBrains Mono"'; g.fillText('SEXO', 1150, 540);
+    g.fillStyle = '#123a5e'; g.font = '600 38px Sora'; g.fillText('F', 1150, 586);
+    // zona de leitura óptica
+    g.fillStyle = '#123a5e'; g.font = '500 40px "JetBrains Mono"';
+    g.fillText('IDTST000000000LA000<<<<<<<<<<<<<<<<<', 70, 860);
+    g.fillText('9001015F3012319TST<<<<<<<<<<<<<<<<<<6', 70, 930);
+    // aviso
+    g.fillStyle = 'rgba(18,58,94,.55)'; g.font = '500 20px "JetBrains Mono"';
+    g.textAlign = 'right'; g.fillText('DOCUMENTO DE TESTE · SEM VALOR', W - 60, H - 40); g.textAlign = 'left';
+    return c;
+  }
+
+  // ---------- a marca, com o mesmo algoritmo e valores por omissão do app ----------
+  function drawWatermark(g, w, h, text, { size = 4, opacity = 35, rotation = -30, density = 5, color = '#1b1b1b' } = {}){
+    const fontPx = Math.max(10, w * size / 100);
+    g.font = `bold ${fontPx}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+    g.textBaseline = 'middle'; g.fillStyle = color; g.globalAlpha = opacity / 100;
+    const textW = g.measureText(text).width;
+    const k = 11 - density;
+    const stepX = textW + fontPx * (0.8 + k * 0.35);
+    const stepY = fontPx * (1.5 + k * 0.45);
+    const angle = rotation * Math.PI / 180;
+    const diag = Math.hypot(w, h);
+    g.save(); g.translate(w / 2, h / 2); g.rotate(angle);
+    let row = 0;
+    for (let y = -diag / 2; y <= diag / 2; y += stepY, row++){
+      const stagger = (row % 2) * stepX / 2;
+      for (let x = -diag / 2 - stagger; x <= diag / 2; x += stepX) g.fillText(text, x, y);
+    }
+    g.restore(); g.globalAlpha = 1;
+  }
+
+  const before = drawSpecimen();
+  const after = document.createElement('canvas'); after.width = W; after.height = H;
+  const ag = after.getContext('2d'); ag.drawImage(before, 0, 0);
+  drawWatermark(ag, W, H, 'Cópia exclusiva para o Banco X — 07/09/2026');
+
+  // ---------- lado a lado ----------
+  const gap = 90, pad = 90, labelH = 110;
+  const side = document.createElement('canvas'); side.width = W * 2 + gap + pad * 2; side.height = H + labelH + pad * 2;
+  const sg = side.getContext('2d');
+  sg.fillStyle = '#050819'; sg.fillRect(0, 0, side.width, side.height);
+  const rg = sg.createRadialGradient(side.width * .2, 0, 0, side.width * .2, 0, side.width * .6);
+  rg.addColorStop(0, 'rgba(132,92,249,.28)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); sg.fillStyle = rg; sg.fillRect(0, 0, side.width, side.height);
+  const rg2 = sg.createRadialGradient(side.width * .85, side.height, 0, side.width * .85, side.height, side.width * .5);
+  rg2.addColorStop(0, 'rgba(0,250,150,.16)'); rg2.addColorStop(1, 'rgba(0,0,0,0)'); sg.fillStyle = rg2; sg.fillRect(0, 0, side.width, side.height);
+  const label = (t, x) => { sg.fillStyle = '#9aa3bc'; sg.font = '500 34px "JetBrains Mono"'; sg.textBaseline = 'alphabetic'; sg.fillText(t, x, pad + 60); };
+  label('ANTES', pad); label('DEPOIS · «Cópia exclusiva para o Banco X — 07/09/2026»', pad + W + gap);
+  const card = (src, x) => { sg.save(); sg.shadowColor = 'rgba(0,0,0,.6)'; sg.shadowBlur = 60; sg.shadowOffsetY = 24; sg.beginPath(); sg.roundRect(x, pad + labelH, W, H, 28); sg.clip(); sg.drawImage(src, x, pad + labelH); sg.restore(); };
+  card(before, pad); card(after, pad + W + gap);
+  sg.fillStyle = '#6c7793'; sg.font = '500 26px "JetBrains Mono"'; sg.textAlign = 'right';
+  sg.fillText('filigrana.ao · documento de teste, sem valor', side.width - pad, side.height - 34); sg.textAlign = 'left';
+
+  const assets = [['especime-bi-antes.png', before], ['especime-bi-depois.png', after], ['antes-depois.png', side]];
+  for (const [name, c] of assets){
+    out.appendChild(c);
+    const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.textContent = `⬇ ${name} (${(blob.size / 1024).toFixed(0)} KB)`;
+    out.appendChild(a); out.appendChild(document.createElement('br'));
+    if (post){ const r = await fetch('http://127.0.0.1:8769/' + name, { method: 'POST', body: blob }); log(`${name}: ${r.status} (${blob.size} bytes)`); }
+  }
+  log('done');
+})();
+</script>
+</body>
+</html>
