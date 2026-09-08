@@ -51,11 +51,13 @@ If a change conflicts with one of these, change the change, not the invariant.
    Default language: `navigator.language` starting with `pt` gives PT, anything else EN; a
    saved preference wins.
 7. **No real documents, ever.** Tests, screenshots, fixtures and press material use only the
-   fictional "Testelândia" specimen (see `tools/press-kit.html`). Never commit, paste or
+   fictional "Testelândia" specimen (see `tools/press-kit.html`; the tests draw their own on a
+   canvas and build PDFs by hand, so no binary fixtures exist). Never commit, paste or
    generate anything that looks like a real ID.
 8. **Stay dependency-free.** Vanilla JS and CSS, no framework, no bundler, no runtime npm
-   dependencies. Dev-only tooling (tests, checks) is acceptable as devDependencies. The
-   single-file `dist/filigrana.html` must keep working offline, opened from disk.
+   dependencies. The only devDependency is `@playwright/test`, pinned to an exact version and
+   bumped by Dependabot. The single-file `dist/filigrana.html` must keep working offline,
+   opened from disk, images and PDFs alike; the tests enforce it.
 
 ## Repository map
 
@@ -73,7 +75,9 @@ vendor.lock.json     version, source and SHA-256 of every file in public/vendor/
 tools/serve.mjs      dev server (npm run dev); applies _headers to responses from public/
 tools/check.mjs      integrity and privacy checks (npm run check); also runs in CI
 tools/*.html         generators for brand assets and press images; open them in a browser
-.github/workflows/   check.yml runs npm run check on every pull request and on main
+tests/               Playwright suite (npm test) + helpers that generate the fixtures in code
+playwright.config.mjs  two Chromium profiles: desktop pt-PT, Pixel 5 en-GB; test server on 8778
+.github/workflows/   check.yml runs npm run check and npm test on every pull request and on main
 dist/, press/        build output and press material; gitignored
 ```
 
@@ -83,21 +87,31 @@ dist/, press/        build output and press material; gitignored
 npm run dev      serves the repo at http://127.0.0.1:8768/  (public/ at the root; also /tools/, /press/, /dist/)
 npm run build    writes dist/filigrana.html
 npm run check    vendor hashes, no-network grep, CSP parity, headers, i18n parity, build, secrets scan
+npm test         Playwright in Chromium: image, PDF, export, compare, airplane mode, single file
+                 (served and file://), CSP refusals, language, prefs, 404; fails on any request
+                 leaving the site. First time: npm install && npx playwright install chromium
 ```
 
-`npm run check` is the merge gate: GitHub Actions runs it on every pull request and `main`
-only accepts pull requests with a passing `check`. Run it locally before pushing. No browser
-test yet; planned: a Playwright smoke test that loads an image and a PDF and asserts zero
-cross-origin requests.
+`npm run check` and `npm test` are the merge gate: GitHub Actions runs both on every pull
+request and `main` only accepts pull requests with both passing. Run them locally before
+pushing. The test server (`tools/serve.mjs --cache`) mirrors production's Cache-Control so the
+airplane-mode test reflects what users get.
 
 ## Things that cost hours once
 
-- pdf.js must run in a real Web Worker. The main-thread "fake worker" hangs on
-  `page.render()`. Served build: `workerSrc = 'vendor/pdf.worker.min.js'`. Single-file build:
-  the worker source is embedded as a non-executed `<script type="text/js-worker">` and
-  started from a Blob URL (see the bottom of `app.js` and step 2 of `build.mjs`).
-- `file://` cannot start workers, so `public/index.html` opened from disk handles images
-  only. Always test through `npm run dev`.
+- pdf.js must run in a real Web Worker, and we create it ourselves: `getPdfWorker()` at the
+  bottom of `app.js` spawns one `Worker` (served: `vendor/pdf.worker.min.js`; single file: a
+  Blob URL of the embedded `<script type="text/js-worker">`, see step 2 of `build.mjs`) and
+  passes it to `getDocument` as `worker`. Never go back to `GlobalWorkerOptions.workerSrc`:
+  pdf.js's own start-up falls back to a main-thread "fake worker" loaded through a `<script>`
+  tag, which hangs on `page.render()` and is blocked by the hash CSP, and from `file://` its
+  blob wrapper fails as well (found by the tests, 2026-09-08).
+- `file://` cannot start a worker from a file URL, so `public/index.html` opened from disk
+  handles images only; the single file works from disk because its worker is a Blob. Always
+  test through `npm run dev` or `npm test`.
+- Cloudflare Pages caches assets for 4 hours (`max-age=14400, must-revalidate`) and HTML not
+  at all. Airplane mode after a first PDF therefore works for about 4 hours; the single file
+  is the real offline story. Changing that means versioned vendor paths plus long caching.
 - Rendering is cancellable through `renderToken` in `app.js`. Keep that pattern for any new
   async step, or fast slider moves will paint stale frames.
 - HEIC is deliberately unsupported: no decoder is shipped and the UI explains how to export a
@@ -109,9 +123,9 @@ cross-origin requests.
 
 ## Workflow
 
-- Branch, pull request, wait for the `check` job, look at the Cloudflare Pages preview URL,
-  merge to `main`. `main` is protected: no direct pushes, no force pushes, pull request and
-  passing `check` required, admins included.
+- Branch, pull request, wait for the `check` and `test` jobs, look at the Cloudflare Pages
+  preview URL, merge to `main`. `main` is protected: no direct pushes, no force pushes, pull
+  request and passing `check` and `test` required, admins included.
 - Commit with the noreply address configured in this repository (`git config user.email`).
 - Before merging anything that touches `app.js`, `index.html`, `_headers` or `vendor/`:
   1. `npm run build` succeeds.
