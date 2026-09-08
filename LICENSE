@@ -23,7 +23,9 @@ SOFTWARE.
 ---
 
 Third-party components (each under its own licence, unmodified):
-- pdf.js 3.11.174 — Apache License 2.0 — https://github.com/mozilla/pdf.js
+- pdf.js 6.3.289 (legacy build, from the npm package pdfjs-dist) — Apache License 2.0 — https://github.com/mozilla/pdf.js — public/vendor/pdfjs-6.3.289/LICENSE
+- OpenJPEG JPEG 2000 decoder, JavaScript build shipped with pdf.js — BSD 2-Clause — public/vendor/pdfjs-6.3.289/wasm/LICENSE_OPENJPEG and LICENSE_PDFJS_OPENJPEG
+- JBIG2 decoder from PDFium, JavaScript build shipped with pdf.js — BSD 3-Clause — public/vendor/pdfjs-6.3.289/wasm/LICENSE_JBIG2 and LICENSE_PDFJS_JBIG2
 - Sora (font) — SIL Open Font License 1.1 — https://github.com/sora-xor/sora-font
 - JetBrains Mono (font) — SIL Open Font License 1.1 — https://github.com/JetBrains/JetBrainsMono
 - The "Filigrana" name and mark, and the Aurora Borealis name and logo — © Aurora Borealis, all rights reserved (not covered by the MIT licence above)
