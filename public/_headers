@@ -11,3 +11,8 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
+
+# Vendored libraries carry their version in the path (vendor/pdfjs-6.3.289/…), so they can be
+# cached for a year: a new version is a new path. Keeps PDFs working offline long after a visit.
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
