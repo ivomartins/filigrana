@@ -3,6 +3,7 @@ press/
 node_modules/
 .wrangler/
 .claude/
+CLAUDE.local.md
 *.log
 Thumbs.db
 .DS_Store
