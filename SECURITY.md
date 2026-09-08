@@ -21,7 +21,7 @@ princípio verdadeiro e verificável.
 | Código do site (`public/`) | Repositório GitHub `ivomartins/filigrana` e Cloudflare Pages | Integridade: o que é servido é o que está no repositório |
 | Biblioteca pdf.js e descodificadores (`public/vendor/`) | Repositório, fixados por hash em `vendor.lock.json` | Integridade e ausência de código de rede activo |
 | Domínio `filigrana.ao` e DNS | Registo `.ao` e Cloudflare | Controlo do nome e do certificado |
-| Registos de acesso | Cloudflare (subcontratado), agregados para a Aurora Borealis | Minimização; ver a página de privacidade |
+| Registos de acesso | Cloudflare (subcontratado): eventos de segurança com IP durante 24 horas, estatísticas agregadas | Minimização; sem exportação nem cópias; ver a página de privacidade |
 
 ## 3. Classificação de dados
 
@@ -32,7 +32,9 @@ princípio verdadeiro e verificável.
   `localStorage` do navegador do utilizador, sob a chave `filigrana-prefs`. Nunca o texto da marca.
 - **Registos de acesso** (endereço IP, navegador, data e hora, página pedida): dados pessoais
   tratados pela Cloudflare por conta da Aurora Borealis, para servir e proteger o site. A Aurora
-  Borealis só vê contagens agregadas.
+  Borealis vê contagens agregadas e, durante 24 horas, os eventos de segurança (pedidos
+  bloqueados ou desafiados na periferia da rede, com endereço IP de origem). Não há exportação
+  nem conservação de registos noutro sistema. Detalhe na página de privacidade.
 
 ## 4. Medidas técnicas
 
@@ -83,7 +85,7 @@ princípio verdadeiro e verificável.
 
 | Entidade | Papel | Dados | Enquadramento |
 |---|---|---|---|
-| Cloudflare, Inc. | Alojamento (Pages), DNS, rede e certificados; subcontratado (art. 23.º) | Registos de acesso | Data Processing Addendum da Cloudflare, parte integrante do contrato de serviço |
+| Cloudflare, Inc. | Alojamento (Pages), DNS, rede e certificados; subcontratado (art. 23.º) | Registos de acesso | Data Processing Addendum da Cloudflare, parte integrante do contrato de serviço; redigido para o RGPD e a lei norte-americana, abrange «todas as leis de protecção de dados aplicáveis ao tratamento» mas não nomeia a Lei n.º 22/11 |
 | GitHub, Inc. | Alojamento do código e integração contínua | Nenhum dado pessoal de utilizadores | Repositório público |
 | npm (GitHub) | Distribuição do pdf.js e do Playwright | Nenhum | Só em desenvolvimento; ficheiros verificados por hash |
 
