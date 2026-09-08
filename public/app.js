@@ -219,7 +219,8 @@
       const data = await file.arrayBuffer();
       // isEvalSupported:false — nunca compilar glifos com new Function (CVE-2024-4367);
       // a CSP já bloqueia eval, mas a opção fica explícita e independente da política.
-      const doc = await pdfjsLib.getDocument({ data, isEvalSupported: false }).promise;
+      const { worker, failed } = getPdfWorker();
+      const doc = await Promise.race([pdfjsLib.getDocument({ data, isEvalSupported: false, worker }).promise, failed]);
       const n = doc.numPages;
       if (n > MAX_PAGES){ doc.destroy(); return toast(t('errTooMany')); }
       const pages = [];
@@ -544,11 +545,27 @@
   }
 
   // ---------- worker do pdf.js (JS same-origin, sem rede) ----------
-  if (window.pdfjsLib){
+  // Somos nós a criar o Worker e a entregá-lo ao pdf.js (opção `worker` do getDocument), em vez
+  // de deixar o pdf.js arrancá-lo a partir de workerSrc. Razão: numa página aberta do disco
+  // (file://, origem opaca) o arranque automático usa um wrapper com importScripts que falha e o
+  // pdf.js cai para o "fake worker", um <script> que a CSP por hashes bloqueia. Um único worker,
+  // criado no primeiro PDF e reutilizado; doc.destroy() não o encerra.
+  let pdfWorker = null, pdfWorkerFailed = null;
+  function pdfWorkerUrl(){
     const embed = document.getElementById('pdfjs-worker-inline'); // presente só no ficheiro único
-    pdfjsLib.GlobalWorkerOptions.workerSrc = embed
-      ? URL.createObjectURL(new Blob([embed.textContent], { type: 'text/javascript' }))
-      : 'vendor/pdf.worker.min.js';
+    return embed ? URL.createObjectURL(new Blob([embed.textContent], { type: 'text/javascript' })) : 'vendor/pdf.worker.min.js';
+  }
+  function getPdfWorker(){
+    if (!pdfWorker){
+      const w = new Worker(pdfWorkerUrl());
+      pdfWorkerFailed = new Promise((_, reject) => w.addEventListener('error', e => {
+        pdfWorker = null; w.terminate();
+        reject(new Error('pdf.js worker: ' + (e.message || 'erro')));
+      }, { once: true }));
+      pdfWorkerFailed.catch(() => {}); // só é observada enquanto um PDF está a ser lido
+      pdfWorker = new pdfjsLib.PDFWorker({ port: w });
+    }
+    return { worker: pdfWorker, failed: pdfWorkerFailed };
   }
 
   // ---------- arranque ----------

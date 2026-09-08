@@ -61,8 +61,10 @@ checks apply — the DevTools labels below are already in English.)*
    houvesse um erro no código, ou uma alteração maliciosa, o navegador bloqueava o envio.
 3. Prova activa: no separador **Console** escreva `fetch('https://example.com')` e prima Enter.
    O navegador responde *Refused to connect … violates the Content Security Policy directive
-   "connect-src 'none'"*. O mesmo com `navigator.sendBeacon('https://example.com', 'x')`, que
-   devolve `false`.
+   "connect-src 'none'"*. O mesmo com `navigator.sendBeacon('https://example.com', 'x')` e com
+   `new WebSocket('wss://example.com')`: a consola regista a violação e nada é enviado. (O
+   `sendBeacon` pode devolver `true`, porque o Chrome só bloqueia o pedido a seguir; o que conta
+   é a violação registada e a ausência do pedido no separador Network.)
 
 A política chega num cabeçalho HTTP (a página não a pode alterar) e está repetida numa `<meta>`.
 Na linha de comandos: `curl -sI https://filigrana.ao | grep -i content-security-policy`.
@@ -84,7 +86,9 @@ Na linha de comandos: `curl -sI https://filigrana.ao | grep -i content-security-
   Os mesmos hashes estão em [`vendor.lock.json`](vendor.lock.json) e são conferidos em cada
   alteração ao código por `npm run check` (localmente e no GitHub Actions), juntamente com a
   ausência de APIs de rede em `app.js`, a igualdade entre a CSP da página e a do cabeçalho, e
-  os restantes cabeçalhos de segurança.
+  os restantes cabeçalhos de segurança. Por cima disso, `npm test` abre a página num Chromium
+  ([`tests/`](tests/)), carrega uma imagem e um PDF, aplica a marca, exporta, repete tudo em
+  modo avião e no ficheiro único, e falha se um único pedido sair do site.
 
   A biblioteca contém código de rede para *abrir PDFs a partir de URLs*, que esta ferramenta não
   usa — e que a CSP bloquearia de qualquer forma.
@@ -97,8 +101,10 @@ Na linha de comandos: `curl -sI https://filigrana.ao | grep -i content-security-
 
 Abra a página e ponha o telemóvel em modo avião (ou, no DevTools, **Network → No throttling →
 Offline**). Imagens, marca e transferência continuam a funcionar. Para PDFs, abra um PDF uma vez
-antes de cortar a rede, para que o navegador guarde o worker. Uma ferramenta que dependesse de um
-servidor pararia aqui.
+antes de cortar a rede: o navegador guarda o worker do pdf.js em cache durante 4 horas. Para
+trabalhar sem rede sem limite de tempo, use o ficheiro único (`dist/filigrana.html`, gerado com
+`npm run build`), que leva tudo dentro e funciona mesmo aberto do disco. Uma ferramenta que
+dependesse de um servidor pararia aqui.
 
 ### O que sai, de facto
 
@@ -124,16 +130,19 @@ public/           ← raiz de deploy (Cloudflare Pages)
 tools/serve.mjs   servidor de desenvolvimento (npm run dev) — sem dependências
 tools/check.mjs   verificações de integridade e privacidade (npm run check) — também no CI
 tools/*.html      geradores de imagens de marca e de imprensa (abrir no navegador)
+tests/            testes de navegador (npm test, Playwright): imagem, PDF, exportação, modo
+                  avião, ficheiro único, CSP; os ficheiros de teste são gerados em código
+playwright.config.mjs
 build.mjs         gera dist/filigrana.html — ficheiro único, offline, com CSP por hashes
 vendor.lock.json  versão, origem e SHA-256 de cada ficheiro em public/vendor/
-package.json      scripts (dev, build, check); sem dependências de execução
-.github/          workflows/check.yml corre npm run check em cada pull request e em main
+package.json      scripts (dev, build, check, test); única dependência, de desenvolvimento: @playwright/test
+.github/          workflows/check.yml corre npm run check e npm test em cada pull request e em main
 CLAUDE.md         regras para quem mantém o projecto (pessoas e agentes de IA)
 ```
 
 ## Desenvolvimento
 
-Não há build para desenvolver e não há dependências a instalar — basta Node (≥ 20):
+Não há build para desenvolver e não há dependências de execução — basta Node (≥ 20):
 
 ```bash
 npm run dev
@@ -147,6 +156,17 @@ cada pull request; `main` só aceita pull requests com esta verificação a pass
 
 ```bash
 npm run check
+```
+
+Os testes de navegador (Playwright, Chromium) carregam uma imagem e um PDF, aplicam a marca,
+transferem o resultado, repetem tudo em modo avião e no ficheiro único, e falham se algum pedido
+sair do site. Correm também no CI. Localmente, a primeira vez instala o Playwright (a única
+dependência, de desenvolvimento) e o Chromium de testes:
+
+```bash
+npm install
+npx playwright install chromium
+npm test
 ```
 
 Para gerar o ficheiro único portátil (`dist/filigrana.html`, ~1,5 MB):
