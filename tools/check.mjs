@@ -29,6 +29,7 @@ const pkg = JSON.parse(read('package.json'));
 const html = read('public/index.html');
 const app = read('public/app.js');
 const headersTxt = read('public/_headers');
+const walk = d => readdirSync(rel(d), { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(d + '/' + e.name) : [d + '/' + e.name]);
 
 // src/href de recursos (script, link, img, …) que apontam para fora do site
 function externalResources(doc, { flagData } = {}){
@@ -53,25 +54,43 @@ check('vendor: hashes SHA-256 conferem com vendor.lock.json e não há ficheiros
       if (got !== hash) fail(`${file}: esperado ${hash.slice(0, 12)}…, obtido ${got.slice(0, 12)}…`);
     }
   }
-  const extra = readdirSync(rel('public/vendor')).map(f => 'public/vendor/' + f).filter(f => !listed.has(f));
+  const extra = walk('public/vendor').filter(f => !listed.has(f));
   if (extra.length) fail(`ficheiros em public/vendor/ fora do lock: ${extra.join(', ')}`);
   return Object.entries(lock.packages).map(([n, e]) => `${n} ${e.version}`).join(', ');
 });
 
-check('vendor: versão do pdf.js coerente em README, CLAUDE.md, build.mjs e index.html', () => {
+check('vendor: versão do pdf.js coerente em app.js (PDFJS_DIR), README, CLAUDE.md e LICENSE', () => {
   const { version, files } = lock.packages['pdf.js'];
-  for (const f of ['README.md', 'CLAUDE.md', 'build.mjs', 'public/index.html']) if (!read(f).includes(version)) fail(`${f} não menciona ${version}`);
+  const dir = `vendor/pdfjs-${version}/`;
+  if (!app.includes(`const PDFJS_DIR = '${dir}';`)) fail(`app.js sem PDFJS_DIR = '${dir}'`);
+  for (const f of Object.keys(files)) if (!f.startsWith('public/' + dir)) fail(`${f} fora de public/${dir}`);
+  for (const f of ['README.md', 'CLAUDE.md', 'LICENSE']) if (!read(f).includes(version)) fail(`${f} não menciona ${version}`);
   const readme = read('README.md');
-  for (const hash of Object.values(files)) if (!readme.includes(hash)) fail(`README não lista o hash ${hash.slice(0, 12)}…`);
+  for (const f of ['pdf.min.mjs', 'pdf.worker.min.mjs']) if (!readme.includes(files['public/' + dir + f])) fail(`README não lista o hash de ${f}`);
+});
+
+check('vendor: sem eval, new Function nem importScripts em nenhum ficheiro JS', () => {
+  const files = walk('public/vendor').filter(f => /\.m?js$/.test(f));
+  if (!files.length) fail('nenhum ficheiro JS em public/vendor/');
+  for (const f of files){
+    const src = read(f);
+    for (const [re, what] of [[/\beval\s*\(/, 'eval('], [/\bnew\s+Function\s*\(/, 'new Function('], [/\bimportScripts\s*\(/, 'importScripts(']]) if (re.test(src)) fail(`${f}: ${what}`);
+  }
+  return `${files.length} ficheiros`;
 });
 
 // ---------- app.js ----------
-check('app.js: getDocument sempre com isEvalSupported:false', () => {
-  const calls = app.match(/getDocument\([^)]*\)/g) || [];
+check('app.js: getDocument sempre com worker próprio e useWasm:false; import() só do vendor próprio', () => {
+  const calls = app.match(/getDocument\(\{[^}]*\}/g) || [];
   if (!calls.length) fail('nenhuma chamada a getDocument encontrada');
-  const bad = calls.filter(c => !/isEvalSupported:\s*false/.test(c));
-  if (bad.length) fail(`chamadas sem a opção: ${bad.join(' | ')}`);
-  return `${calls.length} chamada(s)`;
+  for (const c of calls){
+    if (!/\bworker\b/.test(c)) fail(`sem worker próprio: ${c}`);
+    if (!/useWasm:\s*false/.test(c)) fail(`sem useWasm:false: ${c}`);
+  }
+  const imports = app.match(/\bimport\([^)]*\)/g) || [];
+  const bad = imports.filter(i => !i.startsWith('import(pdfjsUrl('));
+  if (bad.length) fail(`import() fora do vendor: ${bad.join(' | ')}`);
+  return `${calls.length} chamada(s), ${imports.length} import()`;
 });
 
 const FORBIDDEN = ['fetch(', 'XMLHttpRequest', 'WebSocket', 'EventSource', 'sendBeacon', 'navigator.share', 'postMessage',
@@ -137,6 +156,8 @@ check('_headers: HSTS, nosniff, X-Frame-Options DENY, Referrer-Policy, Permissio
   if (!get('Permissions-Policy')) fail('sem Permissions-Policy');
   if (get('Cross-Origin-Opener-Policy') !== 'same-origin') fail('COOP != same-origin');
   if (get('Cross-Origin-Resource-Policy') !== 'same-origin') fail('CORP != same-origin');
+  const vendorRule = headersTxt.match(/^\/vendor\/\*\s*\r?\n\s*Cache-Control:\s*(.+)$/m);
+  if (!vendorRule || !/immutable/.test(vendorRule[1])) fail('sem regra /vendor/* com Cache-Control immutable');
 });
 
 // ---------- i18n ----------
@@ -180,7 +201,10 @@ check('ficheiros: 404.html, manifest válido, ícones, fontes e imagens referenc
 check('build: dist/filigrana.html gera sem erros e mantém as garantias', () => {
   execFileSync(process.execPath, ['build.mjs'], { cwd: ROOT, stdio: 'pipe' });
   const dist = read('dist/filigrana.html');
-  if (!dist.includes('isEvalSupported: false')) fail('dist sem isEvalSupported:false');
+  const modules = (dist.match(/<script type="module">/g) || []).length;
+  if (modules !== 2) fail(`esperava 2 módulos inline (pdf.js e app.js), há ${modules}`);
+  if (!dist.includes('type="text/js-worker"')) fail('dist sem o worker embutido');
+  if (dist.replace(/<!--[\s\S]*?-->/g, '').replace(/^\s*\/\/.*$/gm, '').includes('vendor/')) fail('dist refere vendor/ fora de comentários');
   const csp = (dist.match(/http-equiv="Content-Security-Policy" content="([^"]*)"/) || [])[1] || fail('dist sem CSP');
   if (!/connect-src 'none'/.test(csp) || /unsafe-|'self'|https?:/.test(csp)) fail(`CSP do dist inesperada: ${csp.slice(0, 80)}…`);
   const ext = externalResources(dist);
