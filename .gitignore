@@ -1,6 +1,10 @@
 dist/
 press/
 node_modules/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 .wrangler/
 .claude/
 CLAUDE.local.md

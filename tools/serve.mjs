@@ -8,6 +8,8 @@
 //
 // Uso: npm run dev            → http://127.0.0.1:8768/
 //      node tools/serve.mjs --port 8080 --host 0.0.0.0
+//      --cache   imita o Cache-Control do Cloudflare Pages (HTML sem cache, restantes ficheiros
+//                4 h) em vez de "no-store"; usado pelos testes para reproduzir o modo avião
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { join, resolve, extname, sep } from 'node:path';
@@ -18,6 +20,7 @@ const args = process.argv.slice(2);
 const opt = (name, dflt) => { const i = args.indexOf(name); return i >= 0 && args[i + 1] ? args[i + 1] : dflt; };
 const PORT = Number(opt('--port', process.env.PORT || 8768));
 const HOST = opt('--host', '127.0.0.1');
+const CACHE = args.includes('--cache');
 
 // ordem importa: o prefixo mais específico primeiro, a raiz por último
 const MOUNTS = [['/public/', 'public'], ['/tools/', 'tools'], ['/press/', 'press'], ['/dist/', 'dist'], ['/', 'public']];
@@ -71,7 +74,9 @@ createServer(async (req, res) => {
     const body = await readFile(file);
     const headers = { 'Content-Type': MIME[extname(file).toLowerCase()] || 'application/octet-stream', 'Content-Length': body.length };
     if (dir === 'public') for (const r of RULES) if (r.re.test(path)) for (const [k, v] of r.headers) headers[k] = v;
-    headers['Cache-Control'] = 'no-store'; // em desenvolvimento nunca queremos ficheiros em cache
+    // em desenvolvimento nunca queremos ficheiros em cache; com --cache, o mesmo que a produção
+    headers['Cache-Control'] = !CACHE ? 'no-store'
+      : extname(file) === '.html' ? 'public, max-age=0, must-revalidate' : 'public, max-age=14400, must-revalidate';
     res.writeHead(200, headers);
     res.end(req.method === 'HEAD' ? undefined : body);
   } catch (e){
@@ -80,5 +85,5 @@ createServer(async (req, res) => {
 }).listen(PORT, HOST, () => {
   // só ASCII no terminal: consolas Windows sem UTF-8 estragam acentos e setas
   console.log(`Filigrana dev: http://${HOST}:${PORT}/  (mounts: /tools/ /press/ /dist/ /public/)`);
-  console.log(`_headers: ${RULES.length} rule(s) applied to responses from public/`);
+  console.log(`_headers: ${RULES.length} rule(s) applied to responses from public/; cache: ${CACHE ? 'like production' : 'no-store'}`);
 });

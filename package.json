@@ -16,6 +16,10 @@
   "scripts": {
     "dev": "node tools/serve.mjs",
     "build": "node build.mjs",
-    "check": "node tools/check.mjs"
+    "check": "node tools/check.mjs",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
   }
 }
