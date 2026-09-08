@@ -27,7 +27,7 @@ free, fully client-side, nothing is uploaded. The UI is bilingual (PT/EN).*
   `localStorage`; o texto da marca nunca é guardado.
 - **PDFs são rasterizados.** Cada página sai como imagem com a marca "cozida" nos píxeis — não é
   uma camada de texto que se apaga num editor. (Contrapartida: o texto deixa de ser seleccionável.)
-- **Por escrito.** A [página de privacidade](https://filigrana.ao/privacidade.html) diz quem é o
+- **Por escrito.** A [página de privacidade](https://filigrana.ao/privacidade) diz quem é o
   responsável, o que o site regista (os acessos, como qualquer site, através da Cloudflare) e o
   enquadramento na Lei n.º 22/11; o [documento de segurança](SECURITY.md) descreve as medidas e
   como comunicar vulnerabilidades.
