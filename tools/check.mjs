@@ -134,10 +134,14 @@ check('páginas HTML: sem scripts inline (e só index.html tem scripts), sem est
       if (!ALLOWED_LINK_HOSTS.includes(host)) problems.push(`${f}: ligação para host não autorizado: ${host}`);
       if (/target="_blank"/i.test(a) && !/rel="[^"]*noopener/i.test(a)) problems.push(`${f}: target=_blank sem noopener: ${host}`);
     }
-    // recursos e páginas locais referenciados existem
-    for (const m of doc.matchAll(/\b(?:src|href)="(\/?(?:assets|fonts|vendor)\/[^"#?]+|\/?[a-z0-9-]+\.(?:css|js|html|webmanifest))"/gi)){
-      if (!existsSync(rel('public/' + m[1].replace(/^\//, '')))) problems.push(`${f}: referência sem ficheiro: ${m[1]}`);
+    // recursos e páginas locais referenciados existem (páginas ligam-se sem .html: o Pages
+    // redirecciona /pagina.html para /pagina e serve pagina.html)
+    for (const m of doc.matchAll(/\b(?:src|href)="(\/?(?:assets|fonts|vendor)\/[^"#?]+|\/?[a-z0-9-]+(?:\.(?:css|js|webmanifest))?)"/gi)){
+      const target = m[1].replace(/^\//, '');
+      const candidates = extname(target) ? [target] : [target + '.html'];
+      if (!candidates.some(c => existsSync(rel('public/' + c)))) problems.push(`${f}: referência sem ficheiro: ${m[1]}`);
     }
+    if (/href="[a-z0-9-]+\.html"/i.test(doc)) problems.push(`${f}: ligação com .html (usar o URL limpo, como o Pages)`);
   }
   if (problems.length) fail(problems.join('; '));
   return `${pages.length} páginas, ${anchorsTotal} ligações externas, todas para hosts autorizados`;

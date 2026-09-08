@@ -211,8 +211,8 @@ test('idioma: alternar, persistir entre recargas; preferências guardadas sem o 
 
 test('privacidade: página estática sem scripts, ligada no rodapé, com responsável, subcontratado e contacto', async ({ page }) => {
   await page.goto('/');
-  await page.click('a[href="privacidade.html"]');
-  await expect(page).toHaveURL(/\/privacidade\.html$/);
+  await page.click('a[href="privacidade"]');
+  await expect(page).toHaveURL(/\/privacidade$/);
   await expect(page).toHaveTitle(/Privacidade/);
   expect(await page.evaluate(() => document.scripts.length), 'a página não tem scripts').toBe(0);
   const doc = page.locator('main.doc');
@@ -220,9 +220,11 @@ test('privacidade: página estática sem scripts, ligada no rodapé, com respons
   await expect(doc).toContainText('Cloudflare, Inc.');
   await expect(doc).toContainText('info@auroraborealis-ao.com');
   await expect(doc).toContainText('art. 4.º');
-  const resp = await page.request.get('/privacidade.html');
+  const resp = await page.request.get('/privacidade');
   expect(resp.status()).toBe(200);
   expect(resp.headers()['content-security-policy']).toContain("connect-src 'none'");
+  const old = await page.request.get('/privacidade.html', { maxRedirects: 0 });
+  expect(old.status(), 'o URL com .html redirecciona para o limpo, como no Pages').toBe(308);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 

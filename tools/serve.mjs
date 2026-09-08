@@ -61,8 +61,13 @@ createServer(async (req, res) => {
     let rel = path.slice(prefix.length);
     if (rel === '' || rel.endsWith('/')) rel += 'index.html';
     const base = join(ROOT, dir);
-    const file = resolve(base, rel);
+    // como o Cloudflare Pages: /pagina.html redirecciona para /pagina, e /pagina serve pagina.html
+    if (dir === 'public' && /\.html$/.test(rel) && rel !== 'index.html'){
+      res.writeHead(308, { Location: path.replace(/\.html$/, '') }); return res.end();
+    }
+    let file = resolve(base, rel);
     if (file !== base && !file.startsWith(base + sep)) return send(res, 403, 'Forbidden');
+    if (dir === 'public' && !extname(file) && !(await stat(file).catch(() => null)) && await stat(file + '.html').catch(() => null)) file += '.html';
 
     const st = await stat(file).catch(() => null);
     if (st?.isDirectory()){ res.writeHead(301, { Location: path + '/' }); return res.end(); }

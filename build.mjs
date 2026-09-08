@@ -73,7 +73,7 @@ html = html.replace('<script src="app.js"></script>', () =>
 html = html.replace(/(src|href)="assets\/([^"]+\.svg)"/g, (_, a, f) => `${a}="${dataUri('assets/' + f, 'image/svg+xml')}"`);
 html = html.replace(/\s*<link rel="manifest"[^>]*>/, '').replace(/\s*<link rel="apple-touch-icon"[^>]*>/, '');
 // a página de privacidade não vai no ficheiro único: a ligação aponta para o site
-html = html.replace('href="privacidade.html"', 'href="https://filigrana.ao/privacidade.html"');
+html = html.replace('href="privacidade"', 'href="https://filigrana.ao/privacidade"');
 
 // 6) CSP estrita com hashes
 const csp = [

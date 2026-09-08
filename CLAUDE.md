@@ -131,6 +131,9 @@ airplane-mode test reflects what users get.
 - `file://` cannot start a worker from a file URL, so `public/index.html` opened from disk
   handles images only; the single file works from disk because its worker is a Blob. Always
   test through `npm run dev` or `npm test`.
+- Cloudflare Pages serves clean URLs: `/privacidade.html` is a 308 redirect to `/privacidade`,
+  and `/index.html` to `/`. Link pages without the `.html` suffix (the check refuses it) and keep
+  canonical URLs in the clean form; `tools/serve.mjs` mirrors both behaviours locally.
 - Cloudflare Pages caches HTML not at all and other assets for 4 hours, except `vendor/*`,
   which `_headers` marks `immutable` for a year because the version is in the path. Airplane
   mode after a first PDF therefore keeps working: the worker persists for the session and the
