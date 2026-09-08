@@ -15,8 +15,8 @@ const read = f => readFileSync(rel(f), 'utf8');
 const sha256 = f => createHash('sha256').update(readFileSync(rel(f))).digest('hex');
 const fail = msg => { throw new Error(msg); };
 
-// hosts para onde o index.html pode ter ligações <a> (nunca recursos: esses são sempre locais)
-const ALLOWED_LINK_HOSTS = ['auroraborealis-ao.com', 'github.com'];
+// hosts para onde as páginas podem ter ligações <a> (nunca recursos: esses são sempre locais)
+const ALLOWED_LINK_HOSTS = ['auroraborealis-ao.com', 'github.com', 'www.cloudflare.com'];
 
 const results = [];
 function check(name, fn){
@@ -112,24 +112,35 @@ check('app.js: localStorage só guarda preferências (nunca o texto da marca)', 
   for (const k of app.match(/localStorage\.(?:getItem|removeItem)\([^)]*\)/g) || []) if (!k.includes('PREFS_KEY')) fail(`acesso a outra chave: ${k}`);
 });
 
-// ---------- index.html ----------
-check('index.html: sem scripts/estilos inline, sem recursos externos, sem formulários/iframes', () => {
+// ---------- páginas HTML ----------
+const pages = walk('public').filter(f => /^public\/[^/]+\.html$/.test(f));
+check('páginas HTML: sem scripts inline (e só index.html tem scripts), sem estilos inline, sem recursos externos, ligações só para hosts autorizados', () => {
   const problems = [];
-  if (/<script(?![^>]*\bsrc=)[^>]*>/i.test(html)) problems.push('script inline');
-  if (/<style[\s>]/i.test(html)) problems.push('<style> inline');
-  if (/\sstyle="/i.test(html)) problems.push('atributo style=');
-  if (/\son[a-z]+="/i.test(html)) problems.push('handler on*= inline');
-  if (/<(form|iframe|object|embed)[\s>]/i.test(html)) problems.push('form/iframe/object/embed');
-  if (/http-equiv="refresh"/i.test(html)) problems.push('meta refresh');
-  for (const r of externalResources(html, { flagData: true })) problems.push(`recurso externo: ${r}`);
-  const anchors = html.match(/<a\b[^>]*href="https?:\/\/[^"]*"[^>]*>/gi) || [];
-  for (const a of anchors){
-    const host = a.match(/href="https?:\/\/([^/"]+)/i)[1];
-    if (!ALLOWED_LINK_HOSTS.includes(host)) problems.push(`ligação para host não autorizado: ${host}`);
-    if (/target="_blank"/i.test(a) && !/rel="[^"]*noopener/i.test(a)) problems.push(`target=_blank sem noopener: ${host}`);
+  let anchorsTotal = 0;
+  for (const f of pages){
+    const doc = read(f);
+    if (/<script(?![^>]*\bsrc=)[^>]*>/i.test(doc)) problems.push(`${f}: script inline`);
+    if (f !== 'public/index.html' && /<script\b/i.test(doc)) problems.push(`${f}: não pode ter scripts`);
+    if (/<style[\s>]/i.test(doc)) problems.push(`${f}: <style> inline`);
+    if (/\sstyle="/i.test(doc)) problems.push(`${f}: atributo style=`);
+    if (/\son[a-z]+="/i.test(doc)) problems.push(`${f}: handler on*= inline`);
+    if (/<(form|iframe|object|embed)[\s>]/i.test(doc)) problems.push(`${f}: form/iframe/object/embed`);
+    if (/http-equiv="refresh"/i.test(doc)) problems.push(`${f}: meta refresh`);
+    for (const r of externalResources(doc, { flagData: true })) problems.push(`${f}: recurso externo: ${r}`);
+    const anchors = doc.match(/<a\b[^>]*href="https?:\/\/[^"]*"[^>]*>/gi) || [];
+    anchorsTotal += anchors.length;
+    for (const a of anchors){
+      const host = a.match(/href="https?:\/\/([^/"]+)/i)[1];
+      if (!ALLOWED_LINK_HOSTS.includes(host)) problems.push(`${f}: ligação para host não autorizado: ${host}`);
+      if (/target="_blank"/i.test(a) && !/rel="[^"]*noopener/i.test(a)) problems.push(`${f}: target=_blank sem noopener: ${host}`);
+    }
+    // recursos e páginas locais referenciados existem
+    for (const m of doc.matchAll(/\b(?:src|href)="(\/?(?:assets|fonts|vendor)\/[^"#?]+|\/?[a-z0-9-]+\.(?:css|js|html|webmanifest))"/gi)){
+      if (!existsSync(rel('public/' + m[1].replace(/^\//, '')))) problems.push(`${f}: referência sem ficheiro: ${m[1]}`);
+    }
   }
   if (problems.length) fail(problems.join('; '));
-  return `${anchors.length} ligações externas, todas para hosts autorizados`;
+  return `${pages.length} páginas, ${anchorsTotal} ligações externas, todas para hosts autorizados`;
 });
 
 check('CSP: <meta> e _headers com a mesma política (mais frame-ancestors no cabeçalho)', () => {
@@ -142,8 +153,13 @@ check('CSP: <meta> e _headers com a mesma política (mais frame-ancestors no cab
   if (JSON.stringify(m) !== JSON.stringify(hh)) fail(`diferem: meta=[${m.join('; ')}] cabeçalho=[${hh.join('; ')}]`);
   for (const must of ["default-src 'none'", "connect-src 'none'", "form-action 'none'", "base-uri 'none'"]) if (!m.includes(must)) fail(`falta ${must}`);
   if (/unsafe-inline|unsafe-eval|https?:|\*/.test(meta)) fail('política contém unsafe-*, URLs ou wildcards');
-  if (!/Content-Security-Policy[^>]*connect-src 'none'/.test(read('public/404.html'))) fail("404.html sem CSP com connect-src 'none'");
-  return `${m.length} directivas`;
+  // as outras páginas têm a sua própria <meta>: sem script-src (scripts impossíveis) e sem ligações
+  for (const f of pages.filter(p => p !== 'public/index.html')){
+    const p = (read(f).match(/http-equiv="Content-Security-Policy" content="([^"]*)"/) || [])[1] || fail(`${f} sem CSP`);
+    for (const must of ["default-src 'none'", "connect-src 'none'", "form-action 'none'", "base-uri 'none'"]) if (!p.includes(must)) fail(`${f}: falta ${must}`);
+    if (/script-src|unsafe-|https?:|\*/.test(p)) fail(`${f}: a CSP não pode permitir scripts, unsafe-* ou URLs`);
+  }
+  return `${m.length} directivas; ${pages.length} páginas com CSP`;
 });
 
 check('_headers: HSTS, nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, COOP e CORP', () => {

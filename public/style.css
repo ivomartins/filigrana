@@ -195,3 +195,20 @@ body.dragging #dropzone{border-color:var(--aurora-green); background:var(--bg-el
 @media (prefers-reduced-motion:reduce){
   *{transition:none !important}
 }
+
+/* ---------- páginas de texto (privacidade) ---------- */
+main.doc{display:block; max-width:760px; margin:8px 0 0; color:var(--fg-secondary); font-size:15px; line-height:1.7}
+.doc h2{margin:34px 0 10px; font-size:17px; font-weight:600; color:var(--fg-primary); letter-spacing:-.01em}
+.doc h2:first-child{margin-top:8px}
+.doc p{margin:0 0 12px}
+.doc ul{margin:0 0 12px; padding-left:20px}
+.doc li{margin:0 0 6px}
+.doc strong{color:var(--fg-primary); font-weight:600}
+.doc a{color:var(--aurora-green-soft); text-decoration:underline; text-underline-offset:3px; text-decoration-color:rgba(93,255,185,.4)}
+.doc a:hover{text-decoration-color:currentColor}
+.doc code{font:500 12.5px var(--font-mono); color:var(--fg-primary); background:rgba(154,163,188,.12); padding:1px 5px; border-radius:var(--radius-sm)}
+.doc dl{margin:0 0 12px; display:grid; grid-template-columns:minmax(150px,200px) 1fr; gap:8px 18px}
+.doc dt{color:var(--fg-muted); font:500 12px var(--font-mono); letter-spacing:.04em; padding-top:3px}
+.doc dd{margin:0}
+.doc-back{margin-top:32px}
+@media (max-width:600px){ .doc dl{grid-template-columns:1fr; gap:2px 0} .doc dd{margin:0 0 10px} }
