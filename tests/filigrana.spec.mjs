@@ -209,6 +209,23 @@ test('idioma: alternar, persistir entre recargas; preferências guardadas sem o 
   expect(await page.evaluate(() => localStorage.length)).toBe(1);
 });
 
+test('privacidade: página estática sem scripts, ligada no rodapé, com responsável, subcontratado e contacto', async ({ page }) => {
+  await page.goto('/');
+  await page.click('a[href="privacidade.html"]');
+  await expect(page).toHaveURL(/\/privacidade\.html$/);
+  await expect(page).toHaveTitle(/Privacidade/);
+  expect(await page.evaluate(() => document.scripts.length), 'a página não tem scripts').toBe(0);
+  const doc = page.locator('main.doc');
+  await expect(doc).toContainText('Responsável pelo tratamento');
+  await expect(doc).toContainText('Cloudflare, Inc.');
+  await expect(doc).toContainText('info@auroraborealis-ao.com');
+  await expect(doc).toContainText('art. 4.º');
+  const resp = await page.request.get('/privacidade.html');
+  expect(resp.status()).toBe(200);
+  expect(resp.headers()['content-security-policy']).toContain("connect-src 'none'");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test('404: caminhos desconhecidos respondem 404 com a página própria', async ({ page, audit }) => {
   audit.allowedConsole.push(/404/);
   const resp = await page.goto('/pagina-que-nao-existe');

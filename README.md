@@ -26,6 +26,10 @@ free, fully client-side, nothing is uploaded. The UI is bilingual (PT/EN).*
   `localStorage`; o texto da marca nunca é guardado.
 - **PDFs são rasterizados.** Cada página sai como imagem com a marca "cozida" nos píxeis — não é
   uma camada de texto que se apaga num editor. (Contrapartida: o texto deixa de ser seleccionável.)
+- **Por escrito.** A [página de privacidade](https://filigrana.ao/privacidade.html) diz quem é o
+  responsável, o que o site regista (os acessos, como qualquer site, através da Cloudflare) e o
+  enquadramento na Lei n.º 22/11; o [documento de segurança](SECURITY.md) descreve as medidas e
+  como comunicar vulnerabilidades.
 
 ## Como verificar que nada sai do seu dispositivo
 
@@ -135,6 +139,8 @@ public/           ← raiz de deploy (Cloudflare Pages)
   style.css       tokens de design + estilos
   app.js          toda a lógica (imagens, PDF, i18n, escrita de PDF mínima)
   _headers        cabeçalhos de segurança para Cloudflare Pages
+  privacidade.html  política de privacidade (Lei 22/11): responsável, registos de acesso, direitos
+  404.html        página de erro própria (sem ela o Pages responderia 200 a tudo)
   manifest.webmanifest
   vendor/pdfjs-6.3.289/   pdf.js (build legacy: pdf.min.mjs + pdf.worker.min.mjs) e, em wasm/,
                   os descodificadores JPEG 2000 e JBIG2 em JavaScript, com as licenças
@@ -151,6 +157,7 @@ vendor.lock.json  versão, origem e SHA-256 de cada ficheiro em public/vendor/
 package.json      scripts (dev, build, check, test); única dependência, de desenvolvimento: @playwright/test
 .github/          workflows/check.yml corre npm run check e npm test em cada pull request e em main
 CLAUDE.md         regras para quem mantém o projecto (pessoas e agentes de IA)
+SECURITY.md       documento de segurança (art. 30.º da Lei 22/11) e comunicação de vulnerabilidades
 ```
 
 ## Desenvolvimento

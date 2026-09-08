@@ -28,7 +28,10 @@ If a change conflicts with one of these, change the change, not the invariant.
    in `index.html`: they would violate the policy and break the hashed single-file build.
 3. **Never persist document content or the watermark text.** `localStorage` holds only
    preferences (`lang`, `color`, `size`, `opacity`, `rotation`, `density`) under the key
-   `filigrana-prefs`. Nothing else is stored anywhere.
+   `filigrana-prefs`. Nothing else is stored anywhere. `public/privacidade.html` and
+   `SECURITY.md` describe exactly this state to users, auditors and the APD; any change to
+   what the site stores, who processes it, or which third party is involved updates both files
+   in the same pull request, before it ships.
 4. **Output is flattened raster.** The mark is drawn into the pixels. PDFs are rasterised page
    by page (scale ≤ 2, longest side ≤ 4000 px, flattened on white) and rewritten by the
    minimal PDF writer in `app.js` (`buildPdf`: one JPEG XObject per page, original MediaBox).
@@ -72,6 +75,7 @@ public/              deploy root (Cloudflare Pages: output dir = public, no buil
   app.js             all logic in one IIFE: i18n, image/PDF loading, render, watermark, PDF writer
   style.css          design tokens, layout, self-hosted @font-face
   _headers           security headers for Cloudflare Pages (CSP, HSTS, X-Frame-Options, ...)
+  privacidade.html   privacy page (Lei 22/11): controller, processor, access logs, rights; no scripts
   404.html           required: without it Pages' SPA fallback answers 200 for unknown paths
   vendor/pdfjs-<v>/  pdf.js legacy build + JS decoders (pinned, hashed)   fonts/  Sora, JetBrains Mono
   assets/            mark, PWA icons, OG image      manifest.webmanifest
@@ -83,6 +87,7 @@ tools/*.html         generators for brand assets and press images; open them in 
 tests/               Playwright suite (npm test) + helpers that generate the fixtures in code
 playwright.config.mjs  two Chromium profiles: desktop pt-PT, Pixel 5 en-GB; test server on 8778
 .github/workflows/   check.yml runs npm run check and npm test on every pull request and on main
+SECURITY.md          security document (Lei 22/11 art. 30) + vulnerability reporting; GitHub shows it
 dist/, press/        build output and press material; gitignored
 ```
 
