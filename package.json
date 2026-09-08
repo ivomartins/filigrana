@@ -15,6 +15,7 @@
   },
   "scripts": {
     "dev": "node tools/serve.mjs",
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "check": "node tools/check.mjs"
   }
 }

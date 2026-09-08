@@ -36,10 +36,12 @@ If a change conflicts with one of these, change the change, not the invariant.
    Re-encoding also strips EXIF; keep it that way.
 5. **pdf.js is vendored, pinned and hashed.** `public/vendor/` holds the official Mozilla
    build, unmodified. `getDocument` is always called with `isEvalSupported: false`
-   (mitigation for CVE-2024-4367; the CSP blocks eval as well, keep both). To update:
-   download the release from github.com/mozilla/pdf.js/releases, verify the SHA-256 of the
-   files, then update the version and hashes in README ("Como verificar"), in `build.mjs` and
-   here. Current: 3.11.174. Planned: 6.x, whose builds are ES modules and will need
+   (mitigation for CVE-2024-4367; the CSP blocks eval as well, keep both). The pinned
+   SHA-256 of each vendored file lives in `vendor.lock.json` and `npm run check` refuses any
+   difference. To update: download the release from github.com/mozilla/pdf.js/releases,
+   verify the SHA-256 of the files, then update `vendor.lock.json`, README ("Como
+   verificar"), `build.mjs`, the comment in `index.html` and this file; the check enforces
+   all five. Current: 3.11.174. Planned: 6.x, whose builds are ES modules and will need
    `type="module"` script tags, a module worker and a change to the worker embedding in
    `build.mjs`.
 6. **Two languages, one dictionary.** All UI strings live in `T.pt` and `T.en` in
@@ -67,8 +69,11 @@ public/              deploy root (Cloudflare Pages: output dir = public, no buil
   vendor/            pdf.js (pinned, hashed)        fonts/    Sora, JetBrains Mono (woff2)
   assets/            mark, PWA icons, OG image      manifest.webmanifest
 build.mjs            builds dist/filigrana.html (single file, CSP by SHA-256 hashes); optional
+vendor.lock.json     version, source and SHA-256 of every file in public/vendor/
 tools/serve.mjs      dev server (npm run dev); applies _headers to responses from public/
+tools/check.mjs      integrity and privacy checks (npm run check); also runs in CI
 tools/*.html         generators for brand assets and press images; open them in a browser
+.github/workflows/   check.yml runs npm run check on every pull request and on main
 dist/, press/        build output and press material; gitignored
 ```
 
@@ -77,10 +82,13 @@ dist/, press/        build output and press material; gitignored
 ```
 npm run dev      serves the repo at http://127.0.0.1:8768/  (public/ at the root; also /tools/, /press/, /dist/)
 npm run build    writes dist/filigrana.html
+npm run check    vendor hashes, no-network grep, CSP parity, headers, i18n parity, build, secrets scan
 ```
 
-No test or check scripts yet. Planned: vendor hash check, no-network grep of `app.js`,
-Playwright smoke test that asserts zero cross-origin requests.
+`npm run check` is the merge gate: GitHub Actions runs it on every pull request and `main`
+only accepts pull requests with a passing `check`. Run it locally before pushing. No browser
+test yet; planned: a Playwright smoke test that loads an image and a PDF and asserts zero
+cross-origin requests.
 
 ## Things that cost hours once
 
@@ -101,8 +109,9 @@ Playwright smoke test that asserts zero cross-origin requests.
 
 ## Workflow
 
-- Branch, pull request, check the Cloudflare Pages preview URL, merge to `main`. Do not push
-  directly to `main`.
+- Branch, pull request, wait for the `check` job, look at the Cloudflare Pages preview URL,
+  merge to `main`. `main` is protected: no direct pushes, no force pushes, pull request and
+  passing `check` required, admins included.
 - Commit with the noreply address configured in this repository (`git config user.email`).
 - Before merging anything that touches `app.js`, `index.html`, `_headers` or `vendor/`:
   1. `npm run build` succeeds.

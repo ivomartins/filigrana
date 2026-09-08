@@ -1,0 +1,15 @@
+{
+  "comment": "Dependências vendored em public/vendor/. Cada ficheiro tem o SHA-256 do build oficial; npm run check recusa qualquer diferença ou ficheiro a mais. Ao actualizar, confira os hashes contra a release em github.com/mozilla/pdf.js (ou o cdnjs) e actualize também README.md, CLAUDE.md, build.mjs e o comentário em public/index.html.",
+  "packages": {
+    "pdf.js": {
+      "version": "3.11.174",
+      "license": "Apache-2.0",
+      "source": "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/",
+      "upstream": "https://github.com/mozilla/pdf.js/releases/tag/v3.11.174",
+      "files": {
+        "public/vendor/pdf.min.js": "5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946",
+        "public/vendor/pdf.worker.min.js": "feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b"
+      }
+    }
+  }
+}
