@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#050819">
+<meta name="color-scheme" content="dark">
+<title>Privacidade — Filigrana</title>
+<meta name="description" content="O que o Filigrana faz com o seu documento (nada sai do dispositivo), o que o site regista e quem é o responsável. Lei n.º 22/11.">
+<link rel="canonical" href="https://filigrana.ao/privacidade.html">
+<link rel="icon" type="image/svg+xml" href="/assets/filigrana-mark.svg">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="ambient" aria-hidden="true"></div>
+<div class="wrap">
+
+  <header class="top">
+    <a class="brand" href="/" title="Filigrana">
+      <img src="/assets/filigrana-mark.svg" alt="" width="28" height="28">
+      <span>Filigrana</span>
+    </a>
+    <div class="top-right"><span class="eyebrow">Privacidade · Privacy</span></div>
+  </header>
+
+  <section class="hero">
+    <h1 class="title">O que o Filigrana <span class="gradient-text">não sabe</span> sobre si.</h1>
+    <p class="lead">O Filigrana foi desenhado para não saber nada sobre si nem sobre os seus documentos. Esta página explica o que isso significa na prática, o que o site regista como qualquer site, e quem é o responsável. Actualizada em 8 de Setembro de 2026.</p>
+    <p class="lead"><em><a href="#en">English version below.</a></em></p>
+  </section>
+
+  <main class="doc">
+
+    <h2>Em resumo</h2>
+    <ul>
+      <li><strong>Nenhum documento sai do seu dispositivo.</strong> A marca é aplicada pelo seu navegador. Não existe servidor a receber ficheiros, nem texto da marca, nem cópias.</li>
+      <li><strong>Sem contas, sem cookies, sem analítica, sem rastreadores.</strong> A página não pode sequer tentar contactar outro site: a sua política de segurança proíbe-o.</li>
+      <li><strong>O site regista o que qualquer site regista:</strong> os pedidos de acesso (endereço IP, navegador, data e hora), através do alojamento. Nunca o conteúdo de um documento.</li>
+      <li><strong>Não vendemos, partilhamos nem cruzamos dados.</strong> Não há dados para o fazer.</li>
+    </ul>
+
+    <h2>1. O que acontece ao seu documento</h2>
+    <p>Quando escolhe uma imagem ou um PDF, o ficheiro é aberto pelo seu navegador, no seu dispositivo, e a marca é desenhada por cima ali mesmo. O resultado é guardado onde indicar. O ficheiro original, o resultado e o texto da marca ficam sempre consigo: o site não os recebe, não os guarda e não os vê.</p>
+    <p>Isto não é uma promessa, é uma propriedade do código, que é público. A política de segurança da página (<code>Content-Security-Policy</code>, com <code>connect-src 'none'</code>) faz o navegador recusar qualquer envio, mesmo que houvesse um erro ou uma alteração maliciosa. Qualquer pessoa pode confirmá-lo em minutos: o procedimento está na secção «Como verificar» do <a href="https://github.com/ivomartins/filigrana#como-verificar-que-nada-sai-do-seu-dispositivo" target="_blank" rel="noopener">repositório</a>.</p>
+    <p>Em termos da Lei n.º 22/11: a marcação é um tratamento de dados (art. 5.º) feito pelo próprio titular, sobre a sua cópia, no seu dispositivo, no âmbito de uma actividade pessoal (art. 4.º). A Aurora Borealis não realiza nenhuma operação sobre esses dados e não lhes tem acesso, pelo que não é responsável pelo tratamento nem subcontratado (art. 5.º). As instituições que recebem cópias marcadas continuam a ser responsáveis pelo tratamento que fazem delas.</p>
+    <p>A versão de ficheiro único (<code>dist/filigrana.html</code>) funciona sem rede e sem sequer os registos de acesso descritos a seguir.</p>
+
+    <h2>2. O que o site regista: dados de acesso</h2>
+    <p>Como qualquer site, o filigrana.ao é entregue por um alojamento que regista os pedidos que recebe. Esse é o único tratamento de dados pessoais ligado ao site.</p>
+    <dl>
+      <dt>Responsável pelo tratamento</dt>
+      <dd>Aurora Borealis, Vila Alice, Rua Fernão de Sousa, Condomínio Bengo, Bloco A, 9.º andar, Luanda. Contacto: <a href="mailto:info@auroraborealis-ao.com">info@auroraborealis-ao.com</a>.</dd>
+      <dt>Subcontratado</dt>
+      <dd>Cloudflare, Inc., que aloja o site (Cloudflare Pages), gere o DNS e a rede de entrega, por conta da Aurora Borealis e sob o seu <a href="https://www.cloudflare.com/cloudflare-customer-dpa/" target="_blank" rel="noopener">Data Processing Addendum</a>, parte integrante do contrato de serviço (art. 23.º).</dd>
+      <dt>Dados</dt>
+      <dd>Endereço IP, tipo de navegador, data e hora, página ou ficheiro pedido e país aproximado. Nunca o conteúdo de documentos, o texto da marca ou os ajustes escolhidos.</dd>
+      <dt>Finalidade e fundamento</dt>
+      <dd>Entregar a página e proteger o site contra abusos e ataques. Interesse legítimo do responsável, que não prevalece sobre os direitos do titular (art. 12.º).</dd>
+      <dt>Conservação e acesso</dt>
+      <dd>Os registos ficam na Cloudflare pelo período limitado previsto na sua <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">política de privacidade</a>. A Aurora Borealis não acede a registos individuais: vê apenas contagens agregadas (visitas por dia, por país), sem endereços IP.</dd>
+      <dt>Localização</dt>
+      <dd>A rede da Cloudflare processa os pedidos nos seus centros de dados, dentro e fora de Angola. Não há outros destinatários.</dd>
+    </dl>
+
+    <h2>3. Cookies e armazenamento local</h2>
+    <p>O site não usa cookies. Guarda as suas preferências (idioma, tamanho, opacidade, rotação, densidade e cor da marca) no armazenamento local do seu navegador, sob a chave <code>filigrana-prefs</code>, para que estejam iguais na próxima visita. O texto da marca nunca é guardado. Pode apagar estas preferências a qualquer momento nas definições do navegador (dados do site).</p>
+
+    <h2>4. Os seus direitos</h2>
+    <p>Tem o direito de acesso, rectificação, actualização, eliminação e oposição em relação aos dados que lhe digam respeito (arts. 25.º e seguintes da Lei n.º 22/11). Como não guardamos dados que permitam identificar visitantes, na prática não temos nada seu para mostrar ou apagar; ainda assim, qualquer pedido pode ser enviado para <a href="mailto:info@auroraborealis-ao.com">info@auroraborealis-ao.com</a> e será respondido no prazo legal. Pode também dirigir-se à Agência de Protecção de Dados (APD).</p>
+
+    <h2>5. Segurança</h2>
+    <p>As medidas técnicas e organizativas, o controlo de alterações e a forma de comunicar vulnerabilidades estão descritos no <a href="https://github.com/ivomartins/filigrana/blob/main/SECURITY.md" target="_blank" rel="noopener">documento de segurança</a> (art. 30.º), público no repositório.</p>
+
+    <h2>6. Alterações a esta página</h2>
+    <p>Esta página vive no repositório público do projecto. Qualquer alteração fica registada, com data e autor, no <a href="https://github.com/ivomartins/filigrana/commits/main/public/privacidade.html" target="_blank" rel="noopener">histórico</a>. Se o site passar a tratar mais dados do que os descritos aqui, esta página será actualizada antes.</p>
+
+    <h2 id="en">English version</h2>
+    <p><strong>In short.</strong> Nothing you load into Filigrana leaves your device: images, PDFs and the watermark text are processed by your browser and never reach a server. There are no accounts, cookies, analytics or trackers, and the page's security policy (<code>connect-src 'none'</code>) makes the browser refuse any attempt to send data anywhere. The procedure to verify this is in the repository's "Como verificar" section.</p>
+    <p><strong>Legal framing (Lei n.º 22/11, Angola).</strong> Watermarking your own copy is processing you carry out yourself, on your own device, as a personal activity (Article 4). Aurora Borealis performs no operation on that data and has no access to it, so it is neither controller nor processor of it (Article 5). Institutions that receive marked copies remain controllers of what they do with them.</p>
+    <p><strong>What the site does record.</strong> Like every website, filigrana.ao is served by a host that logs requests: IP address, browser type, date and time, requested page, approximate country. Controller: Aurora Borealis, Luanda (<a href="mailto:info@auroraborealis-ao.com">info@auroraborealis-ao.com</a>). Processor: Cloudflare, Inc., under its Data Processing Addendum, which forms part of the service agreement. Purpose: serving and protecting the site; legal basis: legitimate interest (Article 12). Logs stay with Cloudflare for the limited period set in its privacy policy and may be processed in data centres inside and outside Angola; Aurora Borealis only sees aggregate counts, never individual IP addresses. No other recipients.</p>
+    <p><strong>Local storage.</strong> No cookies. Your watermark preferences (language, size, opacity, rotation, density, colour) are kept in your browser's local storage under <code>filigrana-prefs</code>; the watermark text never is. Clear them from your browser's site-data settings at any time.</p>
+    <p><strong>Your rights.</strong> Access, rectification, updating, erasure and objection (Article 25 onwards). We hold nothing that identifies visitors, but any request sent to <a href="mailto:info@auroraborealis-ao.com">info@auroraborealis-ao.com</a> will be answered within the legal deadline. You may also contact the Agência de Protecção de Dados (APD).</p>
+    <p><strong>Security and changes.</strong> Technical and organisational measures and vulnerability reporting are described in the public <a href="https://github.com/ivomartins/filigrana/blob/main/SECURITY.md" target="_blank" rel="noopener">security document</a>. This page lives in the repository; every change is recorded in its history. Last updated 8 September 2026.</p>
+
+    <p class="doc-back"><a class="chipbtn" href="/">← Voltar ao Filigrana</a></p>
+  </main>
+
+</div>
+</body>
+</html>
