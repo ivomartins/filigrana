@@ -20,7 +20,8 @@ free, fully client-side, nothing is uploaded. The UI is bilingual (PT/EN).*
   [Content-Security-Policy](public/_headers) inclui `connect-src 'none'`: a página é
   tecnicamente incapaz de enviar dados para qualquer lado.
 - **Sem terceiros.** Fontes (Sora, JetBrains Mono) e a biblioteca de PDF (pdf.js) são servidas
-  do próprio site. Sem CDNs, sem cookies, sem analítica, sem contas.
+  do próprio site. Sem CDNs, sem cookies, sem contas, sem scripts de analítica: as visitas
+  contam-se, agregadas, nos registos do alojamento (ver «O que sai, de facto»).
 - **Metadados removidos.** A re-codificação da imagem descarta EXIF (localização, dispositivo).
 - **Nada é guardado sobre o documento.** As preferências (idioma, ajustes) ficam em
   `localStorage`; o texto da marca nunca é guardado.

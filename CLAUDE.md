@@ -19,7 +19,9 @@ If a change conflicts with one of these, change the change, not the invariant.
 
 1. **Nothing leaves the device.** No `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource` or
    `navigator.sendBeacon`; no `<img>`, `<link>` or `<script>` to other origins; no CDNs; no
-   analytics, error reporting or cookies; no service worker without an explicit decision.
+   analytics scripts, error reporting or cookies; no service worker without an explicit
+   decision. Visit statistics exist, but only as the host's aggregate request counts; every
+   public text says "no analytics scripts", never "no analytics".
    All assets (fonts, pdf.js, icons) are self-hosted in `public/`.
 2. **CSP stays strict, in both places.** The policy lives in the `<meta>` of
    `public/index.html` and in `public/_headers` (which adds `frame-ancestors`). Keep them

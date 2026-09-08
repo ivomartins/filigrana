@@ -51,8 +51,9 @@ princípio verdadeiro e verificável.
 4. **Transporte:** HTTPS obrigatório com redireccionamento, TLS 1.2 no mínimo, certificado gerido
    pela Cloudflare. DNSSEC: planeado (depende do registo `.ao`).
 5. **Sem terceiros na página:** fontes, biblioteca de PDF e imagens servidas do próprio site. Sem
-   CDNs, sem analítica, sem cookies. As funcionalidades da Cloudflare que injectam scripts
-   (Web Analytics, Bot Fight Mode, Rocket Loader, Email Obfuscation) ficam desligadas.
+   CDNs, sem cookies, sem scripts de analítica; as estatísticas de visitas são as contagens
+   agregadas do alojamento. As funcionalidades da Cloudflare que injectam scripts (Web Analytics,
+   Bot Fight Mode e detecções JavaScript, Rocket Loader, Email Obfuscation) ficam desligadas.
 6. **Biblioteca de PDF isolada:** o pdf.js corre num Web Worker criado pelo próprio site, só é
    carregado quando o primeiro PDF é aberto, recebe o ficheiro em memória e não descarrega nada
    (`useWasm: false`). O código vendored não contém `eval`, `new Function` nem `importScripts`.
