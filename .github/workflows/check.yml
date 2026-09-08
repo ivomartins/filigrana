@@ -1,0 +1,29 @@
+# Corre `npm run check` (tools/check.mjs) em cada pull request e em cada push para main.
+# O token só lê o repositório; não há segredos, nem escrita, nem dependências a instalar.
+# A acção externa está fixada pelo hash do commit (o comentário indica a versão).
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: node --version
+      - run: npm run check

@@ -1,0 +1,8 @@
+# Mantém actualizado o hash fixado da acção usada em .github/workflows/. Sem dependências npm
+# de execução, este é o único "pacote" externo do repositório.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
