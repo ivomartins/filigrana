@@ -81,8 +81,17 @@ Na linha de comandos: `curl -sI https://filigrana.ao | grep -i content-security-
   - `public/vendor/pdf.min.js` — SHA-256 `5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946`
   - `public/vendor/pdf.worker.min.js` — SHA-256 `feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b`
 
+  Os mesmos hashes estão em [`vendor.lock.json`](vendor.lock.json) e são conferidos em cada
+  alteração ao código por `npm run check` (localmente e no GitHub Actions), juntamente com a
+  ausência de APIs de rede em `app.js`, a igualdade entre a CSP da página e a do cabeçalho, e
+  os restantes cabeçalhos de segurança.
+
   A biblioteca contém código de rede para *abrir PDFs a partir de URLs*, que esta ferramenta não
   usa — e que a CSP bloquearia de qualquer forma.
+- O pdf.js é invocado com `isEvalSupported: false` (procure em `app.js`): os glifos das fontes
+  nunca são compilados com `new Function`, a via explorada pela CVE-2024-4367 nas versões
+  anteriores à 4.2.67. A CSP, sem `unsafe-eval`, bloqueia essa via de qualquer forma — são duas
+  barreiras independentes.
 
 ### 4. Modo avião — a prova mais simples, sem ferramentas
 
@@ -112,22 +121,38 @@ public/           ← raiz de deploy (Cloudflare Pages)
   vendor/         pdf.js 3.11.174 (pdf.min.js + pdf.worker.min.js)
   fonts/          Sora e JetBrains Mono (woff2, variáveis, subset latin)
   assets/         marca Filigrana, ícones PWA, cartão OG, marca Aurora (crédito)
-tools/brand-assets.html   gera og.jpg e ícones a partir das fontes e da marca
+tools/serve.mjs   servidor de desenvolvimento (npm run dev) — sem dependências
+tools/check.mjs   verificações de integridade e privacidade (npm run check) — também no CI
+tools/*.html      geradores de imagens de marca e de imprensa (abrir no navegador)
 build.mjs         gera dist/filigrana.html — ficheiro único, offline, com CSP por hashes
+vendor.lock.json  versão, origem e SHA-256 de cada ficheiro em public/vendor/
+package.json      scripts (dev, build, check); sem dependências de execução
+.github/          workflows/check.yml corre npm run check em cada pull request e em main
+CLAUDE.md         regras para quem mantém o projecto (pessoas e agentes de IA)
 ```
 
 ## Desenvolvimento
 
-Não há build para desenvolver: sirva `public/` com qualquer servidor estático.
+Não há build para desenvolver e não há dependências a instalar — basta Node (≥ 20):
 
 ```bash
-python -m http.server 8768 --directory public
+npm run dev
+```
+
+Abre `public/` em `http://127.0.0.1:8768/` com os mesmos cabeçalhos de segurança de produção
+(lê `public/_headers`). Qualquer outro servidor estático a servir `public/` também serve.
+
+Antes de propor uma alteração, corra as verificações (as mesmas que o GitHub Actions corre em
+cada pull request; `main` só aceita pull requests com esta verificação a passar):
+
+```bash
+npm run check
 ```
 
 Para gerar o ficheiro único portátil (`dist/filigrana.html`, ~1,5 MB):
 
 ```bash
-node build.mjs
+npm run build
 ```
 
 > O PDF precisa de um Web Worker, por isso funciona quando servido (site) ou a partir do

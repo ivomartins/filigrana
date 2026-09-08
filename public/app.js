@@ -217,7 +217,9 @@
     setBusy(t('loadingPdf'));
     try {
       const data = await file.arrayBuffer();
-      const doc = await pdfjsLib.getDocument({ data }).promise;
+      // isEvalSupported:false — nunca compilar glifos com new Function (CVE-2024-4367);
+      // a CSP já bloqueia eval, mas a opção fica explícita e independente da política.
+      const doc = await pdfjsLib.getDocument({ data, isEvalSupported: false }).promise;
       const n = doc.numPages;
       if (n > MAX_PAGES){ doc.destroy(); return toast(t('errTooMany')); }
       const pages = [];

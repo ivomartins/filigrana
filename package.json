@@ -1,0 +1,21 @@
+{
+  "name": "filigrana",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Marca de água para cópias de documentos de identificação — 100% no navegador, nada é enviado.",
+  "homepage": "https://filigrana.ao",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ivomartins/filigrana.git"
+  },
+  "license": "MIT",
+  "author": "Aurora Borealis (https://auroraborealis-ao.com)",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node tools/serve.mjs",
+    "build": "node build.mjs",
+    "check": "node tools/check.mjs"
+  }
+}
