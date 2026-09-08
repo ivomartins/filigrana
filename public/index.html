@@ -140,10 +140,8 @@
 <input type="file" id="fileInput" accept="image/*,application/pdf,.pdf">
 <div id="toast" role="alert" hidden></div>
 
-<!-- pdf.js 3.11.174 (cdnjs), vendored locally. The worker is same-origin JS — no network, stays
-     fully offline. Served build points workerSrc at vendor/pdf.worker.min.js; the single-file
-     dist embeds the worker and app.js spins it from a Blob URL. -->
-<script src="vendor/pdf.min.js"></script>
+<!-- pdf.js is vendored under vendor/ and imported by app.js only when a PDF is opened (module +
+     module worker, same-origin, no network). The single-file dist inlines both. -->
 <script src="app.js"></script>
 </body>
 </html>

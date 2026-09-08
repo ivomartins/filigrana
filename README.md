@@ -42,13 +42,15 @@ checks apply — the DevTools labels below are already in English.)*
    o resultado.
 3. Leia a lista de pedidos. Deve ver apenas:
    - pedidos **GET** ao próprio domínio (`filigrana.ao`) dos ficheiros estáticos do site —
-     `index.html`, `style.css`, `app.js`, as fontes `.woff2`, os `.svg`, `pdf.min.js` e, ao
-     abrir o primeiro PDF, `pdf.worker.min.js`;
+     `index.html`, `style.css`, `app.js`, as fontes `.woff2`, os `.svg` e, só ao abrir o primeiro
+     PDF, a biblioteca de PDF (`vendor/pdfjs-6.3.289/pdf.min.mjs` e `pdf.worker.min.mjs`; se o
+     PDF tiver imagens JPEG 2000 ou JBIG2, também o descodificador correspondente em
+     `vendor/pdfjs-6.3.289/wasm/`);
    - entradas `blob:` — ficheiros em memória do navegador; não são pedidos de rede.
 4. Confirme a ausência: escreva `method:POST` na caixa de filtro → lista vazia. Active a coluna
    **Domain** (clique direito no cabeçalho) → só aparece `filigrana.ao`. Depois de carregar o
-   documento não é feito nenhum pedido novo, à excepção do worker do PDF — um ficheiro do próprio
-   site.
+   documento não é feito nenhum pedido novo, à excepção, no primeiro PDF, da biblioteca de PDF —
+   ficheiros do próprio site.
 
 ### 2. A política que o navegador impõe — CSP
 
@@ -76,12 +78,18 @@ Na linha de comandos: `curl -sI https://filigrana.ao | grep -i content-security-
   `sha256sum public/app.js`.
 - `app.js` é legível (~550 linhas, sem minificação). Procure `fetch(`, `XMLHttpRequest`,
   `WebSocket`, `sendBeacon`: zero ocorrências. O único `.src` atribuído é um `blob:` local; o PDF
-  é entregue ao pdf.js em memória (`getDocument({ data })`); a exportação é
-  `URL.createObjectURL` mais uma ligação `download`.
-- O pdf.js é a biblioteca da Mozilla, versão 3.11.174, sem alterações. Confirme com o hash dos
-  ficheiros publicados em `cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/`:
-  - `public/vendor/pdf.min.js` — SHA-256 `5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946`
-  - `public/vendor/pdf.worker.min.js` — SHA-256 `feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b`
+  é entregue ao pdf.js em memória (`getDocument({ data, … })`); a exportação é
+  `URL.createObjectURL` mais uma ligação `download`. O único `import()` aponta para a pasta
+  `vendor/` do próprio site.
+- O pdf.js é a biblioteca da Mozilla, versão 6.3.289 (build *legacy*, o que suporta navegadores
+  mais antigos), sem alterações, copiada do pacote npm `pdfjs-dist@6.3.289` (integridade do
+  tarball: `sha512-ZHjSVpDa3D6izMq8/04lvkhkATUmL9px6ChPaXc1k6nU2Mrhlg1/7F0bdUqCwUjw3NsPTfPZsMDUU6ZIcRaeQw==`).
+  Confirme com o hash dos ficheiros publicados em
+  `cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/legacy/build/` (espelho exacto do npm):
+  - `public/vendor/pdfjs-6.3.289/pdf.min.mjs` — SHA-256 `f401927e692efc7735e0cd528c490d0dd31b7f0972c122b7040df805be45cce4`
+  - `public/vendor/pdfjs-6.3.289/pdf.worker.min.mjs` — SHA-256 `a33cfe728c584fdba4fcc1fd54bcdc2f9f2f13889ddbb5b2bd1d0f8cbe49b84e`
+  - os descodificadores JPEG 2000 e JBIG2 em JavaScript (`wasm/*_nowasm_fallback.js`, de
+    `cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/wasm/`) e as licenças: hashes em `vendor.lock.json`.
 
   Os mesmos hashes estão em [`vendor.lock.json`](vendor.lock.json) e são conferidos em cada
   alteração ao código por `npm run check` (localmente e no GitHub Actions), juntamente com a
@@ -90,18 +98,22 @@ Na linha de comandos: `curl -sI https://filigrana.ao | grep -i content-security-
   ([`tests/`](tests/)), carrega uma imagem e um PDF, aplica a marca, exporta, repete tudo em
   modo avião e no ficheiro único, e falha se um único pedido sair do site.
 
-  A biblioteca contém código de rede para *abrir PDFs a partir de URLs*, que esta ferramenta não
-  usa — e que a CSP bloquearia de qualquer forma.
-- O pdf.js é invocado com `isEvalSupported: false` (procure em `app.js`): os glifos das fontes
-  nunca são compilados com `new Function`, a via explorada pela CVE-2024-4367 nas versões
-  anteriores à 4.2.67. A CSP, sem `unsafe-eval`, bloqueia essa via de qualquer forma — são duas
-  barreiras independentes.
+  A biblioteca só é descarregada quando abre o primeiro PDF (quem só marca imagens nunca a pede).
+  Contém código de rede para *abrir PDFs a partir de URLs* e para ir buscar descodificadores
+  `.wasm`, que esta ferramenta não usa: o PDF é entregue em memória e a opção `useWasm: false`
+  faz o worker importar os descodificadores em JavaScript do próprio site, só se um PDF os
+  pedir. A CSP bloquearia qualquer outra coisa.
+- O código do pdf.js não contém `eval(` nem `new Function(`: procure em `public/vendor/`, zero
+  ocorrências (`npm run check` também o confirma). A versão 3.x compilava glifos de fontes com
+  `new Function`, a via explorada pela CVE-2024-4367; a 6.x já não tem essa via. A CSP, sem
+  `unsafe-eval`, bloqueá-la-ia de qualquer forma.
 
 ### 4. Modo avião — a prova mais simples, sem ferramentas
 
 Abra a página e ponha o telemóvel em modo avião (ou, no DevTools, **Network → No throttling →
 Offline**). Imagens, marca e transferência continuam a funcionar. Para PDFs, abra um PDF uma vez
-antes de cortar a rede: o navegador guarda o worker do pdf.js em cache durante 4 horas. Para
+antes de cortar a rede: a biblioteca é carregada nesse momento, fica na página e em cache até um
+ano (a pasta traz a versão no nome e é servida como *immutable*). Para
 trabalhar sem rede sem limite de tempo, use o ficheiro único (`dist/filigrana.html`, gerado com
 `npm run build`), que leva tudo dentro e funciona mesmo aberto do disco. Uma ferramenta que
 dependesse de um servidor pararia aqui.
@@ -124,7 +136,8 @@ public/           ← raiz de deploy (Cloudflare Pages)
   app.js          toda a lógica (imagens, PDF, i18n, escrita de PDF mínima)
   _headers        cabeçalhos de segurança para Cloudflare Pages
   manifest.webmanifest
-  vendor/         pdf.js 3.11.174 (pdf.min.js + pdf.worker.min.js)
+  vendor/pdfjs-6.3.289/   pdf.js (build legacy: pdf.min.mjs + pdf.worker.min.mjs) e, em wasm/,
+                  os descodificadores JPEG 2000 e JBIG2 em JavaScript, com as licenças
   fonts/          Sora e JetBrains Mono (woff2, variáveis, subset latin)
   assets/         marca Filigrana, ícones PWA, cartão OG, marca Aurora (crédito)
 tools/serve.mjs   servidor de desenvolvimento (npm run dev) — sem dependências
@@ -194,9 +207,15 @@ Alternativa sem Git: `wrangler login` e depois `wrangler pages deploy public --p
 
 - HEIC (iPhone) não é descodificado fora do Safari — a ferramenta explica como partilhar em JPG.
 - PDFs até 30 páginas; páginas renderizadas a ≤ 2× / ≤ 4000 px para caber nos limites de canvas móveis.
+- PDFs precisam de um navegador recente (Chrome/Edge 125+, Firefox ESR, Safari 18+, o mínimo do
+  build *legacy* do pdf.js 6). Em navegadores mais antigos aparece «Não foi possível ler este
+  PDF»; as imagens funcionam na mesma.
+- No ficheiro único (`dist/filigrana.html`), PDFs com imagens JPEG 2000 ou JBIG2 não são
+  suportados: os descodificadores não são embutidos. No site funcionam.
 - A marca dificulta e rastreia a reutilização indevida; não a torna impossível.
 
 ## Licença
 
-MIT — ver [LICENSE](LICENSE). pdf.js (Apache-2.0), Sora e JetBrains Mono (OFL-1.1) mantêm as
-suas licenças. Os nomes e marcas *Filigrana* e *Aurora Borealis* não são abrangidos pela licença MIT.
+MIT — ver [LICENSE](LICENSE). pdf.js (Apache-2.0), os descodificadores OpenJPEG (BSD-2) e JBIG2
+do PDFium (BSD-3) que o acompanham, e as fontes Sora e JetBrains Mono (OFL-1.1) mantêm as suas
+licenças. Os nomes e marcas *Filigrana* e *Aurora Borealis* não são abrangidos pela licença MIT.

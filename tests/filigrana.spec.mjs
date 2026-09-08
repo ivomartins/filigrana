@@ -60,7 +60,7 @@ test('página inicial: idioma pelo navegador, cabeçalhos de segurança, sem tra
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-test('imagem: marca aplicada, comparação com o original, JPG exportado sem EXIF', async ({ page }) => {
+test('imagem: marca aplicada, comparação com o original, JPG exportado sem EXIF; pdf.js nunca é descarregado', async ({ page, audit }) => {
   await page.goto('/');
   const jpeg = await makeSpecimenJpeg(page);
   expect(hasExif(jpeg), 'o ficheiro de teste tem EXIF de propósito').toBe(true);
@@ -85,9 +85,10 @@ test('imagem: marca aplicada, comparação com o original, JPG exportado sem EXI
   expect(jpegSize(buffer)).toEqual({ width: 1200, height: 760 });
   expect(hasExif(buffer), 'a exportação remove o EXIF').toBe(false);
   expect(buffer.equals(jpeg)).toBe(false);
+  expect(audit.requests.filter(r => r.url.includes('/vendor/')), 'só imagens: a biblioteca de PDF não é pedida').toEqual([]);
 });
 
-test('PDF: duas páginas, marca em cada uma, exportação rasterizada com as dimensões originais', async ({ page }) => {
+test('PDF: duas páginas, marca em cada uma, exportação rasterizada com as dimensões originais', async ({ page, audit }) => {
   await page.goto('/');
   const pdf = makePdf([{ w: 595, h: 842, text: 'FILIGRANA TESTE - pagina 1' }, { w: 842, h: 595, text: 'pagina 2 em paisagem' }]);
   await loadFile(page, { name: 'teste-2pag.pdf', mimeType: 'application/pdf', buffer: pdf });
@@ -111,6 +112,8 @@ test('PDF: duas páginas, marca em cada uma, exportação rasterizada com as dim
   expect(info.dct, 'cada página é uma imagem JPEG').toBe(true);
   expect(info.hasTextOps, 'sem texto nem fontes: a marca está nos píxeis').toBe(false);
   expect(buffer.length).toBeGreaterThan(20_000);
+  const vendor = audit.requests.map(r => new URL(r.url).pathname).filter(p => p.includes('/vendor/'));
+  expect(vendor.sort(), 'o primeiro PDF pede a biblioteca e o worker, mais nada').toEqual(['/vendor/pdfjs-6.3.289/pdf.min.mjs', '/vendor/pdfjs-6.3.289/pdf.worker.min.mjs']);
 });
 
 test('modo avião: depois do primeiro PDF, o site continua a funcionar sem rede', async ({ page, context }) => {

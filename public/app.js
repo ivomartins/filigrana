@@ -213,16 +213,17 @@
   }
 
   async function loadPdf(file){
-    if (!window.pdfjsLib) return toast(t('errPdfRead'));
     setBusy(t('loadingPdf'));
     try {
-      const data = await file.arrayBuffer();
-      // isEvalSupported:false — nunca compilar glifos com new Function (CVE-2024-4367);
-      // a CSP já bloqueia eval, mas a opção fica explícita e independente da política.
-      const { worker, failed } = getPdfWorker();
-      const doc = await Promise.race([pdfjsLib.getDocument({ data, isEvalSupported: false, worker }).promise, failed]);
+      const data = new Uint8Array(await file.arrayBuffer());
+      const pdfjsLib = await loadPdfjs();
+      const { worker, failed } = getPdfWorker(pdfjsLib);
+      // useWasm:false — nunca há fetch de .wasm (a CSP proíbe qualquer fetch); os descodificadores
+      // JPEG 2000 e JBIG2 vêm em JS puro e o worker importa-os de vendor/…/wasm/ só se um PDF os pedir.
+      const task = pdfjsLib.getDocument({ data, worker, useWasm: false, wasmUrl: pdfjsUrl('wasm/') });
+      const doc = await Promise.race([task.promise, failed]);
       const n = doc.numPages;
-      if (n > MAX_PAGES){ doc.destroy(); return toast(t('errTooMany')); }
+      if (n > MAX_PAGES){ task.destroy(); return toast(t('errTooMany')); }
       const pages = [];
       for (let i = 1; i <= n; i++){
         setBusy(fmtN(t('procPage'), i, n));
@@ -243,7 +244,7 @@
         c.width = 0;
         pg.cleanup();
       }
-      doc.destroy();
+      task.destroy(); // liberta o documento no worker; o worker em si fica para o próximo PDF
       invalidateCache();
       state.pages = pages;
       state.pageIdx = 0;
@@ -252,6 +253,7 @@
       state.srcName = (file.name || 'documento').replace(/\.[^.]+$/, '');
       showDoc();
     } catch (e){
+      console.error('Filigrana: PDF', e); // fica na consola do utilizador; nada sai do dispositivo
       toast(e && e.name === 'PasswordException' ? t('errPdfPassword') : t('errPdfRead'));
     } finally {
       setBusy(null);
@@ -544,20 +546,34 @@
     show(b, !!msg);
   }
 
-  // ---------- worker do pdf.js (JS same-origin, sem rede) ----------
-  // Somos nós a criar o Worker e a entregá-lo ao pdf.js (opção `worker` do getDocument), em vez
-  // de deixar o pdf.js arrancá-lo a partir de workerSrc. Razão: numa página aberta do disco
-  // (file://, origem opaca) o arranque automático usa um wrapper com importScripts que falha e o
-  // pdf.js cai para o "fake worker", um <script> que a CSP por hashes bloqueia. Um único worker,
-  // criado no primeiro PDF e reutilizado; doc.destroy() não o encerra.
+  // ---------- pdf.js (só quando é preciso; módulo ES same-origin, sem rede) ----------
+  // A biblioteca importa-se dinamicamente no primeiro PDF: quem só marca imagens nunca descarrega
+  // os ~1,8 MB. A pasta traz a versão no nome (cache longa em _headers; nova versão = caminho novo).
+  // No ficheiro único, o build substitui a linha `loadPdfjs` pela biblioteca embutida.
+  const PDFJS_DIR = 'vendor/pdfjs-6.3.289/';
+  const pdfjsUrl = f => new URL(PDFJS_DIR + f, document.baseURI).href;
+  let pdfjsPromise = null;
+  const loadPdfjs = () => (pdfjsPromise ??= import(pdfjsUrl('pdf.min.mjs')).catch(e => { pdfjsPromise = null; throw e; }));
+
+  // Somos nós a criar o Worker (módulo) e a entregá-lo ao pdf.js (opção `worker` do getDocument),
+  // em vez de deixar o pdf.js arrancá-lo a partir de workerSrc. Razão: numa página aberta do disco
+  // (file://, origem opaca) o arranque automático usa um wrapper que falha e o pdf.js cai para o
+  // "fake worker", um <script> que a CSP por hashes bloqueia. Um único worker, criado no primeiro
+  // PDF e reutilizado; doc.destroy() não o encerra.
   let pdfWorker = null, pdfWorkerFailed = null;
-  function pdfWorkerUrl(){
+  function pdfWorkerSpec(){
     const embed = document.getElementById('pdfjs-worker-inline'); // presente só no ficheiro único
-    return embed ? URL.createObjectURL(new Blob([embed.textContent], { type: 'text/javascript' })) : 'vendor/pdf.worker.min.js';
+    // No site, o worker é o módulo ES original em vendor/. No ficheiro único, o build converte-o
+    // em script clássico: o Chrome recusa Workers módulo criados a partir de blob: numa página
+    // aberta do disco (file://, origem opaca), mas aceita os clássicos.
+    return embed
+      ? { url: URL.createObjectURL(new Blob([embed.textContent], { type: 'text/javascript' })), options: {} }
+      : { url: pdfjsUrl('pdf.worker.min.mjs'), options: { type: 'module' } };
   }
-  function getPdfWorker(){
+  function getPdfWorker(pdfjsLib){
     if (!pdfWorker){
-      const w = new Worker(pdfWorkerUrl());
+      const spec = pdfWorkerSpec();
+      const w = new Worker(spec.url, spec.options);
       pdfWorkerFailed = new Promise((_, reject) => w.addEventListener('error', e => {
         pdfWorker = null; w.terminate();
         reject(new Error('pdf.js worker: ' + (e.message || 'erro')));

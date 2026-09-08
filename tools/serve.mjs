@@ -75,8 +75,9 @@ createServer(async (req, res) => {
     const headers = { 'Content-Type': MIME[extname(file).toLowerCase()] || 'application/octet-stream', 'Content-Length': body.length };
     if (dir === 'public') for (const r of RULES) if (r.re.test(path)) for (const [k, v] of r.headers) headers[k] = v;
     // em desenvolvimento nunca queremos ficheiros em cache; com --cache, o mesmo que a produção
-    headers['Cache-Control'] = !CACHE ? 'no-store'
-      : extname(file) === '.html' ? 'public, max-age=0, must-revalidate' : 'public, max-age=14400, must-revalidate';
+    // (uma regra de _headers com Cache-Control próprio, como /vendor/*, prevalece)
+    if (!CACHE) headers['Cache-Control'] = 'no-store';
+    else if (!headers['Cache-Control']) headers['Cache-Control'] = extname(file) === '.html' ? 'public, max-age=0, must-revalidate' : 'public, max-age=14400, must-revalidate';
     res.writeHead(200, headers);
     res.end(req.method === 'HEAD' ? undefined : body);
   } catch (e){
