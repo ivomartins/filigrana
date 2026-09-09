@@ -54,8 +54,8 @@ princípio verdadeiro e verificável.
    CDNs, sem cookies, sem scripts de analítica; as estatísticas de visitas são as contagens
    agregadas do alojamento. As funcionalidades da Cloudflare que injectam scripts (Web Analytics,
    Bot Fight Mode e detecções JavaScript, Rocket Loader, Email Obfuscation) ficam desligadas e,
-   como garantia independente da configuração, todas as respostas levam `Cache-Control:
-   no-transform`, que a Cloudflare respeita não injectando nada no HTML. A página servida é
+   como garantia independente da configuração, as páginas HTML levam `Cache-Control:
+   no-transform`, que a Cloudflare respeita não injectando nada nelas. A página servida é
    igual, byte a byte, à do repositório.
 6. **Biblioteca de PDF isolada:** o pdf.js corre num Web Worker criado pelo próprio site, só é
    carregado quando o primeiro PDF é aberto, recebe o ficheiro em memória e não descarrega nada

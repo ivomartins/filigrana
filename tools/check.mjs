@@ -180,8 +180,9 @@ check('_headers: HSTS, nosniff, X-Frame-Options DENY, Referrer-Policy, Permissio
   if (!vendorRule || !/immutable/.test(vendorRule[1])) fail('sem regra /vendor/* com Cache-Control immutable');
 });
 
-check('_headers: todas as respostas com Cache-Control no-transform (a Cloudflare não injecta nada no HTML)', () => {
-  // mesma semântica do tools/serve.mjs e do Pages: regras por ordem, a última que casa prevalece
+check('_headers: HTML com Cache-Control no-transform e max-age=0; Cache-Control definido por uma só regra por caminho', () => {
+  // semântica do Pages, verificada num preview: todas as regras que casam aplicam-se e, se mais
+  // de uma definir o mesmo cabeçalho, os valores são JUNTOS (não há "última prevalece")
   const rules = []; let cur = null;
   for (const raw of headersTxt.split(/\r?\n/)){
     if (!raw.trim() || raw.trim().startsWith('#')) continue;
@@ -189,13 +190,18 @@ check('_headers: todas as respostas com Cache-Control no-transform (a Cloudflare
     const i = raw.indexOf(':'); if (cur && i > 0) cur.headers[raw.slice(0, i).trim()] = raw.slice(i + 1).trim();
   }
   const re = p => new RegExp('^' + p.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/:[A-Za-z0-9_]+/g, '[^/]+') + '$');
-  const effective = path => rules.filter(r => re(r.pattern).test(path)).reduce((acc, r) => ({ ...acc, ...r.headers }), {});
-  for (const path of ['/', '/privacidade', '/404', '/qualquer-caminho', '/app.js', '/style.css', '/vendor/x/y.mjs']){
-    const cc = effective(path)['Cache-Control'] || '';
-    if (!/\bno-transform\b/.test(cc)) fail(`${path}: Cache-Control sem no-transform (${cc || 'ausente'})`);
-    if (/^\/(privacidade|404)?$/.test(path) && !/max-age=0/.test(cc)) fail(`${path}: HTML deve ter max-age=0 (${cc})`);
+  const htmlPaths = pages.map(f => f.replace(/^public\//, '/').replace(/\.html$/, '').replace(/^\/index$/, '/'));
+  const paths = [...htmlPaths, '/qualquer-caminho', '/app.js', '/style.css', '/fonts/sora.woff2', '/vendor/x/y.mjs'];
+  for (const path of paths){
+    const matching = rules.filter(r => re(r.pattern).test(path) && r.headers['Cache-Control']);
+    if (matching.length > 1) fail(`${path}: Cache-Control definido por ${matching.length} regras (${matching.map(r => r.pattern).join(', ')}); o Pages juntaria os valores`);
+    const cc = matching[0]?.headers['Cache-Control'] || '';
+    if (htmlPaths.includes(path)){
+      if (!/\bno-transform\b/.test(cc)) fail(`${path}: HTML sem no-transform (${cc || 'sem regra'})`);
+      if (!/\bmax-age=0\b/.test(cc)) fail(`${path}: HTML deve ter max-age=0 (${cc})`);
+    } else if (/\bno-transform\b/.test(cc)) fail(`${path}: no-transform fora do HTML desliga a compressão`);
   }
-  return `${rules.length} regras`;
+  return `${rules.length} regras; HTML: ${htmlPaths.join(', ')}`;
 });
 
 // ---------- i18n ----------

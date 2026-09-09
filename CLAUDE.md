@@ -146,12 +146,17 @@ airplane-mode test reflects what users get.
   test on a mid-range Android phone, not a laptop.
 - Cloudflare: analytics come only from edge request logs. Never enable the JavaScript beacon
   ("Web Analytics"), Rocket Loader, Email Obfuscation or any feature that injects scripts.
-  Dashboard toggles are not the control, though: every response carries `Cache-Control:
+  Dashboard toggles are not the control, though: every HTML page carries `Cache-Control:
   no-transform` from `_headers`, which Cloudflare honours by injecting nothing (its docs say
   so explicitly for JavaScript Detections, which on the Free plan cannot be switched off).
-  Never remove `no-transform`; the check verifies it on every path and the tests on the
+  HTML only: on other files `no-transform` also disables Brotli compression, and injection
+  never touches them. Never remove it; the check verifies it per path and the tests on the
   served pages. Found the hard way on 2026-09-08, when both the analytics beacon and the
   bot-detection snippet appeared in production HTML and were blocked by the CSP.
+- Pages `_headers` mechanics, verified on a preview: every matching rule applies, and a header
+  set by more than one matching rule gets its values joined, not overridden. So Cache-Control
+  must come from exactly one rule per path; the check enforces it and `serve.mjs` joins the
+  same way so a duplicate shows up locally.
 
 ## Workflow
 
