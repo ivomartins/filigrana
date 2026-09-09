@@ -53,6 +53,7 @@ test('página inicial: idioma pelo navegador, cabeçalhos de segurança, sem tra
   expect(h['content-security-policy']).toContain("frame-ancestors 'none'");
   expect(h['strict-transport-security']).toContain('max-age=31536000');
   expect(h['x-frame-options']).toBe('DENY');
+  expect(h['cache-control'], 'no-transform: a rede de entrega não pode alterar a página').toContain('no-transform');
   const lang = await expectedLang(page);
   await expect(page.locator('html')).toHaveAttribute('lang', lang);
   await expect(page.locator('h1')).toContainText(lang === 'pt' ? 'Marque a cópia' : 'Stamp the copy');
@@ -223,6 +224,7 @@ test('privacidade: página estática sem scripts, ligada no rodapé, com respons
   const resp = await page.request.get('/privacidade');
   expect(resp.status()).toBe(200);
   expect(resp.headers()['content-security-policy']).toContain("connect-src 'none'");
+  expect(resp.headers()['cache-control']).toContain('no-transform');
   const old = await page.request.get('/privacidade.html', { maxRedirects: 0 });
   expect(old.status(), 'o URL com .html redirecciona para o limpo, como no Pages').toBe(308);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

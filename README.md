@@ -76,6 +76,12 @@ checks apply — the DevTools labels below are already in English.)*
 A política chega num cabeçalho HTTP (a página não a pode alterar) e está repetida numa `<meta>`.
 Na linha de comandos: `curl -sI https://filigrana.ao | grep -i content-security-policy`.
 
+No mesmo cabeçalho vem `Cache-Control: … no-transform`. É a instrução, definida na norma HTTP, para
+que nenhum intermediário altere a resposta; a Cloudflare respeita-a e não injecta nada na página
+(scripts de detecção de bots, beacons de analítica, ofuscação). Por isso a página servida é
+igual, byte a byte, à do repositório: `curl -s https://filigrana.ao/ | sha256sum` dá o mesmo que
+`sha256sum public/index.html`.
+
 ### 3. O código
 
 - Não há passo de build: o que o servidor entrega é, byte a byte, o que está em `public/` neste

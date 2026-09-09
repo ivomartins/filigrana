@@ -78,7 +78,8 @@ createServer(async (req, res) => {
 
     const body = await readFile(file);
     const headers = { 'Content-Type': MIME[extname(file).toLowerCase()] || 'application/octet-stream', 'Content-Length': body.length };
-    if (dir === 'public') for (const r of RULES) if (r.re.test(path)) for (const [k, v] of r.headers) headers[k] = v;
+    // como o Pages: todas as regras que casam aplicam-se e um cabeçalho repetido tem os valores juntos
+    if (dir === 'public') for (const r of RULES) if (r.re.test(path)) for (const [k, v] of r.headers) headers[k] = headers[k] ? `${headers[k]}, ${v}` : v;
     // em desenvolvimento nunca queremos ficheiros em cache; com --cache, o mesmo que a produção
     // (uma regra de _headers com Cache-Control próprio, como /vendor/*, prevalece)
     if (!CACHE) headers['Cache-Control'] = 'no-store';
