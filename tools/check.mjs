@@ -180,6 +180,24 @@ check('_headers: HSTS, nosniff, X-Frame-Options DENY, Referrer-Policy, Permissio
   if (!vendorRule || !/immutable/.test(vendorRule[1])) fail('sem regra /vendor/* com Cache-Control immutable');
 });
 
+check('_headers: todas as respostas com Cache-Control no-transform (a Cloudflare não injecta nada no HTML)', () => {
+  // mesma semântica do tools/serve.mjs e do Pages: regras por ordem, a última que casa prevalece
+  const rules = []; let cur = null;
+  for (const raw of headersTxt.split(/\r?\n/)){
+    if (!raw.trim() || raw.trim().startsWith('#')) continue;
+    if (!/^\s/.test(raw)){ cur = { pattern: raw.trim(), headers: {} }; rules.push(cur); continue; }
+    const i = raw.indexOf(':'); if (cur && i > 0) cur.headers[raw.slice(0, i).trim()] = raw.slice(i + 1).trim();
+  }
+  const re = p => new RegExp('^' + p.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/:[A-Za-z0-9_]+/g, '[^/]+') + '$');
+  const effective = path => rules.filter(r => re(r.pattern).test(path)).reduce((acc, r) => ({ ...acc, ...r.headers }), {});
+  for (const path of ['/', '/privacidade', '/404', '/qualquer-caminho', '/app.js', '/style.css', '/vendor/x/y.mjs']){
+    const cc = effective(path)['Cache-Control'] || '';
+    if (!/\bno-transform\b/.test(cc)) fail(`${path}: Cache-Control sem no-transform (${cc || 'ausente'})`);
+    if (/^\/(privacidade|404)?$/.test(path) && !/max-age=0/.test(cc)) fail(`${path}: HTML deve ter max-age=0 (${cc})`);
+  }
+  return `${rules.length} regras`;
+});
+
 // ---------- i18n ----------
 check('i18n: T.pt e T.en com as mesmas chaves, sem vazios e mesmos marcadores; HTML só usa chaves existentes', () => {
   const start = app.indexOf('const T = {');

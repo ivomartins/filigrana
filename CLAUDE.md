@@ -146,6 +146,12 @@ airplane-mode test reflects what users get.
   test on a mid-range Android phone, not a laptop.
 - Cloudflare: analytics come only from edge request logs. Never enable the JavaScript beacon
   ("Web Analytics"), Rocket Loader, Email Obfuscation or any feature that injects scripts.
+  Dashboard toggles are not the control, though: every response carries `Cache-Control:
+  no-transform` from `_headers`, which Cloudflare honours by injecting nothing (its docs say
+  so explicitly for JavaScript Detections, which on the Free plan cannot be switched off).
+  Never remove `no-transform`; the check verifies it on every path and the tests on the
+  served pages. Found the hard way on 2026-09-08, when both the analytics beacon and the
+  bot-detection snippet appeared in production HTML and were blocked by the CSP.
 
 ## Workflow
 
