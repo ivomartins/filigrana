@@ -59,6 +59,9 @@ test('página inicial: idioma pelo navegador, cabeçalhos de segurança, sem tra
   await expect(page.locator('h1')).toContainText(lang === 'pt' ? 'Marque a cópia' : 'Stamp the copy');
   await expect(page.locator('#dropzone')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  const ico = await page.request.get('/favicon.ico');
+  expect(ico.status(), 'favicon.ico existe (navegadores e bots pedem-no mesmo com o ícone SVG declarado)').toBe(200);
+  expect(ico.headers()['content-type']).toContain('image/');
 });
 
 test('imagem: marca aplicada, comparação com o original, JPG exportado sem EXIF; pdf.js nunca é descarregado', async ({ page, audit }) => {

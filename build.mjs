@@ -71,7 +71,8 @@ html = html.replace('<script src="app.js"></script>', () =>
 
 // 5) imagens SVG → data: URIs; extras que só fazem sentido servidos saem
 html = html.replace(/(src|href)="assets\/([^"]+\.svg)"/g, (_, a, f) => `${a}="${dataUri('assets/' + f, 'image/svg+xml')}"`);
-html = html.replace(/\s*<link rel="manifest"[^>]*>/, '').replace(/\s*<link rel="apple-touch-icon"[^>]*>/, '');
+html = html.replace(/\s*<link rel="manifest"[^>]*>/, '').replace(/\s*<link rel="apple-touch-icon"[^>]*>/, '')
+  .replace(/\s*<link rel="icon" href="\/favicon\.ico"[^>]*>/, '');
 // a página de privacidade não vai no ficheiro único: a ligação aponta para o site
 html = html.replace('href="privacidade"', 'href="https://filigrana.ao/privacidade"');
 
