@@ -26,7 +26,11 @@ If a change conflicts with one of these, change the change, not the invariant.
 2. **CSP stays strict, in both places.** The policy lives in the `<meta>` of
    `public/index.html` and in `public/_headers` (which adds `frame-ancestors`). Keep them
    equivalent. Keep `default-src 'none'`, `connect-src 'none'`, `form-action 'none'`,
-   `base-uri 'none'`; never add `unsafe-inline` or `unsafe-eval`. No inline scripts or styles
+   `base-uri 'none'`; never add `unsafe-inline` or `unsafe-eval`. Two paths a CSP cannot
+   govern in today's browsers: a top-level navigation carrying data in the URL, and WebRTC.
+   Both need code in the public, hashed app.js, and the README says so. Do not add
+   `webrtc 'block'`: Chromium does not recognise the directive and logs a console error on
+   every page (tested 2026-09-09); the check refuses it. No inline scripts or styles
    in `index.html`: they would violate the policy and break the hashed single-file build.
 3. **Never persist document content or the watermark text.** `localStorage` holds only
    preferences (`lang`, `color`, `size`, `opacity`, `rotation`, `density`) under the key

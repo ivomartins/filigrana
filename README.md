@@ -17,8 +17,12 @@ free, fully client-side, nothing is uploaded. The UI is bilingual (PT/EN).*
 ## Garantias de privacidade
 
 - **Nenhum upload.** Todo o processamento é feito com a Canvas API no navegador. A
-  [Content-Security-Policy](public/_headers) inclui `connect-src 'none'`: a página é
-  tecnicamente incapaz de enviar dados para qualquer lado.
+  [Content-Security-Policy](public/_headers) inclui `connect-src 'none'` e `form-action 'none'`:
+  a página é tecnicamente incapaz de enviar dados em segundo plano por qualquer mecanismo que
+  a política governa (fetch, XHR, WebSocket, beacon, formulário, imagem). Os dois caminhos que
+  uma CSP não governa nos navegadores actuais, navegar para outro site com dados no endereço e
+  abrir um canal WebRTC, exigiriam código que teria de estar no `app.js` público, verificável
+  por hash; o primeiro substituiria ainda a página à vista do utilizador.
 - **Sem terceiros.** Fontes (Sora, JetBrains Mono) e a biblioteca de PDF (pdf.js) são servidas
   do próprio site. Sem CDNs, sem cookies, sem contas, sem scripts de analítica: as visitas
   contam-se, agregadas, nos registos do alojamento (ver «O que sai, de facto»).

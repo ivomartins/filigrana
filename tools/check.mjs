@@ -157,6 +157,7 @@ check('CSP: <meta> e _headers com a mesma política (mais frame-ancestors no cab
   if (JSON.stringify(m) !== JSON.stringify(hh)) fail(`diferem: meta=[${m.join('; ')}] cabeçalho=[${hh.join('; ')}]`);
   for (const must of ["default-src 'none'", "connect-src 'none'", "form-action 'none'", "base-uri 'none'"]) if (!m.includes(must)) fail(`falta ${must}`);
   if (/unsafe-inline|unsafe-eval|https?:|\*/.test(meta)) fail('política contém unsafe-*, URLs ou wildcards');
+  if (/\bwebrtc\b/.test(meta)) fail("a directiva webrtc não é reconhecida pelo Chromium (erro na consola em todas as páginas)");
   // as outras páginas têm a sua própria <meta>: sem script-src (scripts impossíveis) e sem ligações
   for (const f of pages.filter(p => p !== 'public/index.html')){
     const p = (read(f).match(/http-equiv="Content-Security-Policy" content="([^"]*)"/) || [])[1] || fail(`${f} sem CSP`);
